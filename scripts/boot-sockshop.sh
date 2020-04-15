@@ -6,11 +6,11 @@ istioctl manifest apply --set profile=demo
 
 kubectl label namespace sock-shop istio-injection=enabled
 
-kubectl apply -f sockshop-istio/1-sock-shop-install/1-sock-shop-complete-demo-istio.yaml -n sock-shop
+kubectl apply -f ../sockshop-istio/1-sock-shop-install/1-sock-shop-complete-demo-istio.yaml -n sock-shop
 
-kubectl apply -f sockshop-istio/1-sock-shop-install/2-sockshop-gateway.yaml -n sock-shop
+kubectl apply -f ../sockshop-istio/1-sock-shop-install/2-sockshop-gateway.yaml -n sock-shop
 
-kubectl apply -f sockshop-istio/1-sock-shop-install/3-virtual-services-all.yaml -n sock-shop
+kubectl apply -f ../sockshop-istio/1-sock-shop-install/3-virtual-services-all.yaml -n sock-shop
 
 sleep 60
 
