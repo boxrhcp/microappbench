@@ -1,0 +1,6 @@
+[submodule "openISBT"]
+	path = openISBT
+	url = https://github.com/martingrambow/openISBT.git
+[submodule "sockshop-istio"]
+	path = sockshop-istio
+	url = https://github.com/boxrhcp/sockshop-istio.git
