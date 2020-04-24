@@ -2,7 +2,7 @@ gcloud container clusters create sock-shop --zone europe-west1-b --machine-type 
 
 kubectl create namespace sock-shop
 
-istioctl manifest apply --set profile=demo
+istioctl manifest apply --set profile=demo --set values.tracing.enabled=true --set values.tracing.provider=zipkin
 
 kubectl label namespace sock-shop istio-injection=enabled
 
@@ -14,10 +14,6 @@ kubectl apply -f ../sockshop-istio/1-sock-shop-install/3-virtual-services-all.ya
 
 sleep 60
 
-kubectl port-forward -n istio-system $(kubectl get pod -n istio-system -l app=jaeger -o jsonpath='{.items[0].metadata.name}') 16686:16686 &
+kubectl port-forward -n istio-system $(kubectl get pod -n istio-system -l app=zipkin -o jsonpath='{.items[0].metadata.name}') 9411:9411 &
 
 kubectl port-forward -n istio-system $(kubectl get pod -n istio-system -l app=kiali -o jsonpath='{.items[0].metadata.name}') 20001:20001 &
-
-#sleep 120
-
-#kiali-trace
