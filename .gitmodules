@@ -4,3 +4,6 @@
 [submodule "sockshop-istio"]
 	path = sockshop-istio
 	url = https://github.com/boxrhcp/sockshop-istio.git
+[submodule "bookinfo"]
+	path = bookinfo
+	url = https://github.com/boxrhcp/bookinfo.git

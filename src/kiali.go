@@ -6,18 +6,19 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 func main() {
 	var username string = "admin"
 	var passwd string = "admin"
-	var start int64 = 1587602321000000
-	var end int64 = 1587602421000000
+	var start int64 = 1588074288000000
+	var end int64 = 1588237898000000
 	var isError bool = false
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "http://localhost:20001/kiali/api/namespaces/sock-shop/"+
-		"services/user/traces", nil)
+		"services/orders/traces", nil)
 	req.SetBasicAuth(username, passwd)
 	resp, err := client.Do(req)
 	if err != nil {
@@ -44,7 +45,17 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			if startTime > start || startTime < end {
+
+			if startTime > start && startTime < end {
+				spanID, err := jsonparser.GetString(traceData, "spanID")
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				duration, err := jsonparser.GetInt(traceData, "duration")
+				if err != nil {
+					log.Fatal(err)
+				}
 
 				tags, _, _, err := jsonparser.Get(traceData, "tags")
 				if err != nil {
@@ -52,38 +63,51 @@ func main() {
 				}
 				var method string
 				var url string
-				var status string
+				var status int
+				var respSize string
+				var reqSize string
 				jsonparser.ArrayEach(tags, func(tagData []byte, dataType jsonparser.ValueType, offset int, err error) {
 					key, err := jsonparser.GetString(tagData, "key")
 					if err != nil {
 						log.Fatal(err)
 					}
-					if key == "error" {
-						error, err := jsonparser.GetBoolean(tagData, "value")
+					switch key {
+					case "http.status_code":
+						statusNum, err := jsonparser.GetString(tagData, "value")
 						if err != nil {
 							log.Fatal(err)
-						} else {
-							isError = error
+						}else{
+							status, err = strconv.Atoi(statusNum)
+							if err != nil {
+								log.Fatal(err)
+							}
 						}
-					} else if key == "http.method" || key == "http.url" || key == "http.status_code" {
-						switch key {
-						case "http.method":
-							method, err = jsonparser.GetString(tagData, "value")
-							if err != nil {
-								log.Fatal(err)
-							}
-						case "http.url":
-							url, err = jsonparser.GetString(tagData, "value")
-							if err != nil {
-								log.Fatal(err)
-							}
-						case "http.status_code":
-							status, err = jsonparser.GetString(tagData, "value")
-							if err != nil {
-								log.Fatal(err)
-							}
+						if status != 200 && status != 201{
+							isError = true
+							fmt.Println("ERROR CALL FOUND")
+						}
+					case "http.method":
+						method, err = jsonparser.GetString(tagData, "value")
+						if err != nil {
+							log.Fatal(err)
+						}
+					case "http.url":
+						url, err = jsonparser.GetString(tagData, "value")
+						if err != nil {
+							log.Fatal(err)
+						}
+					case "response_size":
+						respSize, err = jsonparser.GetString(tagData, "value")
+						if err != nil {
+							log.Fatal(err)
+						}
+					case "request_size":
+						reqSize, err = jsonparser.GetString(tagData, "value")
+						if err != nil {
+							log.Fatal(err)
 						}
 					}
+
 				})
 				if isError {
 
@@ -96,14 +120,19 @@ func main() {
 						log.Fatal(err)
 					}
 
-					recTime := time.Unix(0, startTime * int64(time.Microsecond))
-					fmt.Println("Trace ID: " + traceID)
+					recTime := time.Unix(0, startTime*int64(time.Microsecond))
+					fmt.Println("Span ID: " + spanID)
 					fmt.Print("Start time: ")
 					fmt.Println(recTime)
+					fmt.Print("Span duration: ")
+					fmt.Println(duration)
 					fmt.Println("Process " + processID + ": " + processName)
 					fmt.Println("HTTP URL: " + url)
 					fmt.Println("HTTP Method: " + method)
-					fmt.Println("HTTP Status: " + status)
+					fmt.Print("HTTP Status: ")
+					fmt.Println(status)
+					fmt.Println("Request Size: " + reqSize)
+					fmt.Println("Response Size: " + respSize)
 					fmt.Println("-------")
 				}
 			}
@@ -112,6 +141,7 @@ func main() {
 		//	fmt.Println(jsonparser.GetString(processes, "serviceName"))
 		//})
 		if isError {
+			fmt.Println("Trace ID: " + traceID)
 			fmt.Println("**************")
 		}
 		isError = false
