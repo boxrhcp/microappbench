@@ -4,25 +4,25 @@ import models.ArtifactObject
 import org.slf4j.LoggerFactory
 
 class BenchmarkPlan {
-    val log = LoggerFactory.getLogger("BenchMarkPlan")
-    private var root: ArtifactObject? = null
-    private val affected: ArrayList<ArtifactObject> = ArrayList<ArtifactObject>()
-    private val rootIssue: ArrayList<ArtifactObject> = ArrayList<ArtifactObject>()
+    private val log = LoggerFactory.getLogger("BenchMarkPlan")
+    private val affected: ArrayList<ArtifactObject> = ArrayList()
+    private val rootIssue: ArrayList<ArtifactObject> = ArrayList()
 
     fun executePlan(artifact: String, path: String): Boolean {
-        root = recursiveBenchmark(ArtifactObject(artifact, path))
+        val root = recursiveBenchmark(ArtifactObject(artifact, path))
 
         if (affected.size > 0) {
             return true
         } else {
-            for (parent in root!!.parentList) {
+            for (parent in root.parentList) {
+                log.info("Benchmarking artifact " + root.name)
                 //benchmark parent
                 if (parent.performanceIssue) {
                     affected.add(parent)
                 }
             }
             if (affected.size > 0) {
-                rootIssue.add(root!!)
+                rootIssue.add(root)
                 return true
             }
         }

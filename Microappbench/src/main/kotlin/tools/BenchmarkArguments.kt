@@ -7,8 +7,11 @@ class BenchmarkArguments(parser: ArgParser) {
     val overwrite by parser.flagging(
         "-o", "--overwrite",
         help = "overwrite existing mapping file").default(false)
-
-    val artifactToBenchmark by parser.adding(
+    val artifactToBenchmark: String by parser.storing(
         "-a", "--artifact",
-        help = "path which should be excluded from mapping")
+        help = "artifact to benchmark")
+
+    val artifactPath: String by parser.storing(
+        "-p", "--path",
+        help = "path of artifact to benchmark")
 }
