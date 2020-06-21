@@ -45,6 +45,10 @@ node server.js 9080 &
 fakeServer_pid=$!
 
 cd ../../scripts/run_openISBT
+
+cp ../sockshop-order-template.json sockshop-order.json
+sed -i -e "s/ip.to.benchmark/$address/g" sockshop-order.json
+
 java -jar openISBTWorker-1.0-SNAPSHOT.jar 8000 &
 worker_pid=$!
 
@@ -54,6 +58,6 @@ java -jar wlgenerator-1.0-SNAPSHOT-all.jar -o -m mapping-order.json -w workload-
 
 kill -KILL $fakeServer_pid
 
-java -jar runner-1.0-SNAPSHOT-all.jar -o -r results-order.json -w workload-order.json -e $address -t 5 -u localhost:8000
+java -jar runner-1.0-SNAPSHOT-all.jar -o -r results-order.json -w workload-order.json -e http://$address -t 5 -u localhost:8000
 
 kill -KILL $worker_pid
