@@ -34,13 +34,14 @@ if [ $flag_build -eq 1 ]; then
     cp build/libs/openISBTWorker-1.0-SNAPSHOT.jar ../../scripts/run_openISBT/
 
     cd ../fakerServer
-    gradle build
+    gradle npmInitUnix
+    gradle npmInstallUnix
 else
     echo "ignoring openISBT build"
     cd ../../openISBT/fakerServer
 fi
 
-node server.js &
+node server.js 9080 &
 fakeServer_pid=$!
 
 cd ../../scripts/run_openISBT
