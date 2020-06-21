@@ -1,0 +1,538 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "",
+    "title": "Order",
+    "description": "Provide order creation, read and deletion",
+    "license": {
+      "name": "MIT",
+      "url": "http://github.com/gruntjs/grunt/blob/master/LICENSE-MIT"
+    },
+    "contact": {}
+  },
+  "servers": [
+    {
+      "url": "http://ip.to.benchmark"
+    }
+  ],
+  "paths": {
+    "/orders": {
+      "get": {
+        "description": "Returns all examples asdasd",
+        "operationId": "Get orders",
+        "parameters": [
+          {
+            "name": "x-version",
+            "in": "header",
+            "description": "header of benchmarked version",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "v2"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json;charset=UTF-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/Getordersresponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Register new order",
+        "operationId": "Set order",
+        "parameters": [
+          {
+            "name": "x-version",
+            "in": "header",
+            "description": "header of benchmarked version",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "v2"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json;charset=UTF-8": {
+              "schema": {
+                "$ref": "#/components/schemas/Registerorder"
+              }
+            }
+          },
+          "description": "register order",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json;charset=UTF-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/Statusresponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "description": "Returns an order",
+        "operationId": "Get order",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID of order to fetch",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "5ec13bcc1b28aa00061d2d70"
+            }
+          },
+          {
+            "name": "x-version",
+            "in": "header",
+            "description": "header of benchmarked version",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "v2"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json;charset=UTF-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete order",
+        "operationId": "Delete order",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID of order to delete",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "5ec13bcc1b28aa00061d2d70"
+            }
+          },
+          {
+            "name": "x-version",
+            "in": "header",
+            "description": "header of benchmarked version",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "v2"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json;charset=UTF-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleteresponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "description": "HTTP Basic Authentication. Works over `HTTP` and `HTTPS`",
+        "scheme": "basic"
+      }
+    },
+    "schemas": {
+      "Getordersresponse": {
+        "title": "Get customers response",
+        "type": "object",
+        "properties": {
+          "_embedded": {
+            "type": "object",
+            "properties": {
+              "customerOrders": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "_links": {
+            "type": "object"
+          },
+          "page": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "_embedded"
+        ]
+      },
+      "Statusresponse": {
+        "title": "Post status response",
+        "type": "object",
+        "properties": {
+          "customerOrder": {
+            "type": "object",
+            "$ref": "#/components/schemas/Order"
+          }
+        },
+        "required": [
+          "customerOrder"
+        ]
+      },
+      "Deleteresponse": {
+        "title": "Delete status response",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string"
+          },
+          "customer": {
+            "type": "object",
+            "properties": {
+              "firstName": {
+                "type": "string"
+              },
+              "lastName": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              },
+              "addresses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Address"
+                }
+              },
+              "cards": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Card"
+                }
+              }
+            },
+            "required": [
+              "firstName",
+              "lastName",
+              "username",
+              "addresses",
+              "cards"
+            ]
+          },
+          "address": {
+            "type": "object",
+            "properties": {
+              "number": {
+                "type": "string"
+              },
+              "street": {
+                "type": "string"
+              },
+              "city": {
+                "type": "string"
+              },
+              "postcode": {
+                "type": "string"
+              },
+              "country": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "number",
+              "street",
+              "city",
+              "postcode",
+              "country"
+            ]
+          },
+          "card": {
+            "type": "object",
+            "properties": {
+              "longNum": {
+                "type": "string"
+              },
+              "expires": {
+                "type": "string"
+              },
+              "ccv": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "longNum",
+              "expires",
+              "ccv"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            }
+          },
+          "shipment": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "shipment"
+            ]
+          },
+          "date": {
+            "type": "string"
+          },
+          "total": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "customerId",
+          "customer",
+          "address",
+          "card",
+          "items",
+          "shipment",
+          "date",
+          "total"
+        ]
+      },
+      "Registerorder": {
+        "title": "Register order",
+        "type": "object",
+        "properties": {
+          "customer": {
+            "type": "string",
+            "description": "customer ref",
+            "enum": [
+              "http://user/customers/57a98d98e4b00679b4a830af"
+            ]
+          },
+          "address": {
+            "type": "string",
+            "description": "address ref",
+            "enum": [
+              "http://user/addresses/57a98d98e4b00679b4a830ad"
+            ]
+          },
+          "card": {
+            "type": "string",
+            "description": "card ref",
+            "enum": [
+              "http://user/cards/57a98d98e4b00679b4a830ae"
+            ]
+          },
+          "items": {
+            "type": "string",
+            "description": "items in cart ref",
+            "enum": [
+              "http://carts/carts/57a98d98e4b00679b4a830af/items"
+            ]
+          }
+        },
+        "required": [
+          "customer",
+          "address",
+          "card",
+          "items"
+        ]
+      },
+      "Card": {
+        "type": "object",
+        "properties": {
+          "longNum": {
+            "type": "string"
+          },
+          "expires": {
+            "type": "string"
+          },
+          "ccv": {
+            "type": "string"
+          },
+          "_links": {
+            "type": "object",
+            "properties": {
+              "self": {
+                "type": "object",
+                "properties": {
+                  "href": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "href"
+                ]
+              },
+              "card": {
+                "type": "object",
+                "properties": {
+                  "href": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "href"
+                ]
+              }
+            },
+            "required": [
+              "self",
+              "card"
+            ]
+          }
+        },
+        "required": [
+          "longNum",
+          "expires",
+          "ccv",
+          "_links"
+        ]
+      },
+      "Address": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string",
+            "faker": "random.number"
+          },
+          "street": {
+            "type": "string",
+            "faker": "address.streetName"
+          },
+          "city": {
+            "type": "string",
+            "faker": "address.city"
+          },
+          "postcode": {
+            "type": "string",
+            "faker": "address.zipCode"
+          },
+          "country": {
+            "type": "string",
+            "faker": "address.country"
+          },
+          "_links": {
+            "type": "object",
+            "properties": {
+              "self": {
+                "type": "object",
+                "properties": {
+                  "href": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "href"
+                ]
+              },
+              "address": {
+                "type": "object",
+                "properties": {
+                  "href": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "href"
+                ]
+              }
+            },
+            "required": [
+              "self",
+              "address"
+            ]
+          }
+        },
+        "required": [
+          "number",
+          "street",
+          "city",
+          "postcode",
+          "country",
+          "_links"
+        ]
+      },
+      "Item": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId",
+          "quantity",
+          "unitPrice"
+        ]
+      }
+    },
+    "links": {},
+    "callbacks": {}
+  },
+  "security": []
+}
