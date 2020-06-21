@@ -34,6 +34,7 @@ if [ $flag_build -eq 1 ]; then
     cp build/libs/openISBTWorker-1.0-SNAPSHOT.jar ../../scripts/run_openISBT/
 
     cd ../fakerServer
+    gradle build
 else
     echo "ignoring openISBT build"
     cd ../../openISBT/fakerServer
