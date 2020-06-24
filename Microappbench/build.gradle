@@ -80,5 +80,5 @@ void jarFactory(Jar jarTask, jarName, mainClass) {
 }
 
 task buildBenchmarkTool(type: Jar) {
-    jarFactory(it, 'benchmarkTool', 'benchmark.BenchmarkTool')
+    jarFactory(it, 'benchmarkTool', 'tools.BenchmarkToolKt')
 }

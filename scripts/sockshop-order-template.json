@@ -29,7 +29,7 @@
             "schema": {
               "type": "string",
               "enum": [
-                "v2"
+                "version.to.benchmark"
               ]
             }
           }
@@ -59,7 +59,7 @@
             "schema": {
               "type": "string",
               "enum": [
-                "v2"
+                "version.to.benchmark"
               ]
             }
           }
@@ -112,7 +112,7 @@
             "schema": {
               "type": "string",
               "enum": [
-                "v2"
+                "version.to.benchmark"
               ]
             }
           }
@@ -152,7 +152,7 @@
             "schema": {
               "type": "string",
               "enum": [
-                "v2"
+                "version.to.benchmark"
               ]
             }
           }

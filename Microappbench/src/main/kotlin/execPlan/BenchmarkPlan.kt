@@ -2,46 +2,26 @@ package execPlan
 
 import models.ArtifactObject
 import org.slf4j.LoggerFactory
+import run.ScriptRunner
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
-class BenchmarkPlan {
+class BenchmarkPlan (address: String) {
     private val log = LoggerFactory.getLogger("BenchMarkPlan")
     private val affected: ArrayList<ArtifactObject> = ArrayList()
     private val rootIssue: ArrayList<ArtifactObject> = ArrayList()
+    private val scriptRunner: ScriptRunner = ScriptRunner()
+    private val address: String = address
+
 
     fun executePlan(artifact: String, path: String): Boolean {
-        val root = recursiveBenchmark(ArtifactObject(artifact, path))
-
-        if (affected.size > 0) {
-            return true
-        } else {
-            for (parent in root.parentList) {
-                log.info("Benchmarking artifact " + root.name)
-                //benchmark parent
-                if (parent.performanceIssue) {
-                    affected.add(parent)
-                }
-            }
-            if (affected.size > 0) {
-                rootIssue.add(root)
-                return true
-            }
-        }
-        return false
+        return true
     }
 
-    private fun recursiveBenchmark(artifact: ArtifactObject): ArtifactObject {
+    private fun executeBenchmark(artifact: ArtifactObject) {
         //benchmark artifact
+        scriptRunner.executeOpenISBT(false, address, "v1", "8000")
 
-        if (artifact.performanceIssue) {
-            affected.add(artifact)
-            if (artifact.childList.isNotEmpty()) {
-                for (child in artifact.childList) {
-                    recursiveBenchmark(child)
-                }
-            } else {
-                rootIssue.add(artifact)
-            }
-        }
-        return artifact
     }
 }
