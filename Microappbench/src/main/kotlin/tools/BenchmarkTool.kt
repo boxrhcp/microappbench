@@ -13,8 +13,10 @@ fun main(args: Array<String>) = mainBody {
         //val benchmarkPlan : BenchmarkPlan = BenchmarkPlan()
         //benchmarkPlan.executePlan(artifactToBenchmark, artifactPath)
         val runner: ScriptRunner = ScriptRunner()
-        runner.executeOpenISBT(false, "34.78.24.189", "v1", "8001")
-        runner.executeOpenISBT(false, "34.78.24.189", "v2", "8002")
+        runner.prepareOpenISBT(false, artifactToBenchmark, "v1")
+        runner.prepareOpenISBT(false, artifactToBenchmark, "v2")
+        runner.executeOpenISBT(artifactToBenchmark, "v1", "8001")
+        runner.executeOpenISBT( artifactToBenchmark, "v2", "8002")
 
     }
 }

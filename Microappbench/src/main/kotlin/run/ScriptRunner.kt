@@ -6,15 +6,20 @@ import kotlin.concurrent.thread
 
 class ScriptRunner {
 
-    fun executeOpenISBT(build: Boolean, address: String, version: String, workerPort: String) {
-        var buildComm: String = ""
-        if (build) buildComm = "-b "
-        thread (start = true, name = version){
-            ("sh run-openISBT.sh $buildComm-a $address -v $version -w $workerPort").runCommand(File("../scripts/run_openISBT"))
+    fun executeOpenISBT(address: String, version: String, workerPort: String) {
+        thread(start = true, name = version) {
+            ("sh run-openISBT.sh -a $address -v $version -w $workerPort").runCommand(File("../scripts/run_openISBT"))
         }
     }
 
-    fun bootSockshop(){
+    fun prepareOpenISBT(build: Boolean, address: String, version: String) {
+        var buildComm: String = ""
+        if (build) buildComm = "-b "
+        ("sh prepare-openISBT.sh $buildComm-a $address -v $version").runCommand(File("../scripts/run_openISBT"))
+
+    }
+
+    fun bootSockshop() {
 
     }
 

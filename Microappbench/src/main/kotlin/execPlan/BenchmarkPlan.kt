@@ -21,7 +21,7 @@ class BenchmarkPlan (address: String) {
 
     private fun executeBenchmark(artifact: ArtifactObject) {
         //benchmark artifact
-        scriptRunner.executeOpenISBT(false, address, "v1", "8000")
+       // scriptRunner.executeOpenISBT(false, address, "v1", "8000")
 
     }
 }
