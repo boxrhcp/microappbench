@@ -1,4 +1,5 @@
 # Binaries for programs and plugins
+
 .DS_store
 .idea/
 *.exe
@@ -10,7 +11,9 @@
 *.jar
 # Test binary, built with `go test -c`
 *.test
-
+*/build
+*/gradle
+*/.gradle
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 

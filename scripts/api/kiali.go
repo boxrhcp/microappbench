@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -13,8 +14,8 @@ import (
 func main() {
 	var username string = "admin"
 	var passwd string = "admin"
-	var start int64 = 1588074288000000
-	var end int64 = 1588237898000000
+	var start int64 = 1592048689000000
+	var end int64 = 1592135089000000
 	var isError bool = false
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "http://localhost:20001/kiali/api/namespaces/sock-shop/"+
@@ -25,7 +26,24 @@ func main() {
 		log.Fatal(err)
 	}
 	bodyText, err := ioutil.ReadAll(resp.Body)
-	//fmt.Println(jsonparser.GetString(bodyText,"data","[0]", "traceID"))
+	f, err := os.Create("api.json")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	l, err := f.Write(bodyText)
+	if err != nil {
+		fmt.Println(err)
+		f.Close()
+		return
+	}
+	fmt.Println(l, "bytes written successfully")
+	err = f.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	//fmt.Println(jsonparser.GetString(bodyText,"data"))
 	data, _, _, err := jsonparser.Get(bodyText, "data")
 	jsonparser.ArrayEach(data, func(traces []byte, dataType jsonparser.ValueType, offset int, err error) {
 		spans, _, _, err := jsonparser.Get(traces, "spans")
