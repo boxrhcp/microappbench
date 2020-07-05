@@ -3,7 +3,6 @@ package tools.benchmarkrunner
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
 import org.slf4j.LoggerFactory
-import run.ScriptRunner
 import workload.WorkloadGenerator
 
 

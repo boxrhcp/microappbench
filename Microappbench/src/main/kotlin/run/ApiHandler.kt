@@ -12,17 +12,14 @@ import models.ApiRequestObject
 import org.slf4j.LoggerFactory
 
 class ApiHandler {
-    private val baseUrl: String = "http://localhost:9090"
-    private val queryPath: String = "/api/v1/query"
     private val log = LoggerFactory.getLogger("PrometheusHandler")!!
 
-    suspend fun getMemoryUsage(apiRequest: ApiRequestObject) {
+    suspend fun makeApiRequest(apiRequest: ApiRequestObject) {
         val maxContentLen = 200
         val client = HttpClient()
         var url = apiRequest.path
-        log.debug("Path is " + url)
         url = buildUrl(url, apiRequest.parameter)
-        log.debug("URL is " + url)
+        log.debug("URL is $url")
         with(apiRequest.method) {
             log.info("Sending ${apiRequest.method} to $url, body: ${apiRequest.body}")
             when {
@@ -32,7 +29,7 @@ class ApiHandler {
                         body =
                             TextContent(apiRequest.body.toString(), contentType = ContentType.Application.Json)
 
-                        if (apiRequest.headers != null && apiRequest.headers.isNotEmpty()) {
+                        if (apiRequest.headers.isNotEmpty()) {
                             for (h in apiRequest.headers) {
                                 log.debug("Add header: ${h.first}, ${h.second}")
                                 headers.append(h.first, h.second)
@@ -56,7 +53,7 @@ class ApiHandler {
                     val response = client.get<HttpResponse>(url) {
                         method = HttpMethod.Get
                         body = TextContent(apiRequest.body.toString(), contentType = ContentType.Application.Json)
-                        if (apiRequest.headers != null && apiRequest.headers.isNotEmpty()) {
+                        if (apiRequest.headers.isNotEmpty()) {
                             for (h in apiRequest.headers) {
                                 log.debug("Add header: ${h.first}, ${h.second}")
                                 headers.append(h.first, h.second)

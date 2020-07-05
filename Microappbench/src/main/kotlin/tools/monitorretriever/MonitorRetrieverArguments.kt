@@ -23,4 +23,14 @@ class MonitorRetrieverArguments(parser: ArgParser) {
         "-k", "--kialiPort",
         help = "path of artifact to benchmark"
     ).default("20001")
+
+    val start: String by parser.storing(
+        "-s", "--start",
+        help = "start time of benchmark"
+    )
+
+    val end: String by parser.storing(
+        "-e", "--end",
+        help = "end time of benchmark"
+    )
 }

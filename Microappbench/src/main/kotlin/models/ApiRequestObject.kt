@@ -5,7 +5,6 @@ import com.google.gson.JsonElement
 data class ApiRequestObject (
     val service: String,
     val path: String,
-    val queryPath: String,
     var parameter: Array<Pair<String, String>>,
     var headers: Array<Pair<String, String>>,
     val method: String,

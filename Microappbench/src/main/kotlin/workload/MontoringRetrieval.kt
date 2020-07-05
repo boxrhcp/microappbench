@@ -1,5 +1,0 @@
-package workload
-
-class MontoringRetrieval {
-
-}
