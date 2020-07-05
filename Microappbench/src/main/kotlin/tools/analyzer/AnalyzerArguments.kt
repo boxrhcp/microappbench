@@ -1,17 +1,20 @@
-package tools
+package tools.analyzer
 
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 
-class BenchmarkArguments(parser: ArgParser) {
+class AnalyzerArguments(parser: ArgParser) {
     val overwrite by parser.flagging(
         "-o", "--overwrite",
-        help = "overwrite existing mapping file").default(false)
+        help = "overwrite existing mapping file"
+    ).default(false)
     val artifactToBenchmark: String by parser.storing(
         "-a", "--artifact",
-        help = "artifact to benchmark")
+        help = "artifact to benchmark"
+    )
 
     val artifactPath: String by parser.storing(
         "-p", "--path",
-        help = "path of artifact to benchmark")
+        help = "path of artifact to benchmark"
+    )
 }

@@ -13,11 +13,16 @@ class ScriptRunner {
     }
 
     fun prepareOpenISBT(build: Boolean, address: String, version: String) {
-        var buildComm: String = ""
+        var buildComm = ""
         if (build) buildComm = "-b "
         ("sh prepare-openISBT.sh $buildComm-a $address -v $version").runCommand(File("../scripts/run_openISBT"))
 
     }
+
+    fun bootSUT() {
+        ("sh boot-sockshop.sh").runCommand(File("../scripts"))
+    }
+
 
     fun bootSockshop() {
 
