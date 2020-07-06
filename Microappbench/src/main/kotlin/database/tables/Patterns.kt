@@ -1,9 +1,9 @@
-package database.models
+package database.tables
 
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.jodatime.datetime
 
-object PatternObject : IntIdTable() {
+object Patterns : IntIdTable() {
     val resource = varchar("resource", 50)
     val version = varchar("version", 10)
     val patternName = varchar("patternName", 50)

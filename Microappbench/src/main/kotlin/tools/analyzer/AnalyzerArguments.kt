@@ -4,17 +4,8 @@ import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 
 class AnalyzerArguments(parser: ArgParser) {
-    val overwrite by parser.flagging(
-        "-o", "--overwrite",
-        help = "overwrite existing mapping file"
+    val clean by parser.flagging(
+        "-c", "--clean",
+        help = "clean existing db"
     ).default(false)
-    val artifactToBenchmark: String by parser.storing(
-        "-a", "--artifact",
-        help = "artifact to benchmark"
-    )
-
-    val artifactPath: String by parser.storing(
-        "-p", "--path",
-        help = "path of artifact to benchmark"
-    )
 }

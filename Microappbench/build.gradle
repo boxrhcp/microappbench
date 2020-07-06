@@ -38,8 +38,9 @@ dependencies {
     compile "org.jetbrains.exposed:exposed-core:0.24.1"
     compile "org.jetbrains.exposed:exposed-dao:0.24.1"
     compile 'org.jetbrains.exposed:exposed-jodatime:0.24.1'
-    compile "org.jetbrains.exposed:exposed-jdbc:0.24.1"
-    compile("mysql:mysql-connector-java:5.1.48")
+    compile 'org.jetbrains.exposed:exposed-jdbc:0.24.1'
+    compile 'mysql:mysql-connector-java:8.0.20'
+    compile 'com.google.cloud.sql:mysql-socket-factory-connector-j-8:1.0.16'
 }
 
 compileKotlin {
@@ -86,4 +87,8 @@ task buildBenchmarkTool(type: Jar) {
 
 task buildMonitorRetrieverTool(type: Jar) {
     jarFactory(it, 'monitorRetrieverTool', 'tools.monitorretriever.MonitorRetrieverToolKt')
+}
+
+task buildAnalyzerTool(type: Jar) {
+    jarFactory(it, 'analyzerTool', 'tools.analyzer.AnalyzerToolKt')
 }

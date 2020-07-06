@@ -1,11 +1,11 @@
-package database.models
+package database.tables
 
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.jodatime.datetime
 
-object SpanObject: Table() {
+object Spans: Table() {
     val id = varchar("id", 50)
-    val traceId = varchar("trace_id", 50).references(TraceObject.id)
+    val traceId = varchar("trace_id", 50).references(Traces.id)
     val version = varchar("version", 10)
     val start = datetime("start")
     val end = datetime("end")
@@ -16,4 +16,6 @@ object SpanObject: Table() {
     val requestSize = integer("request_size")
     val responseSize = integer("response_size")
     var parentId = varchar("parent_id", 50).references(this.id)
+
+    override val primaryKey = PrimaryKey(Traces.id)
 }
