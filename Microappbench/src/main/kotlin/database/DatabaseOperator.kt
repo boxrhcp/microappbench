@@ -1,6 +1,5 @@
 package database
 
-import database.models.*
 import database.tables.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction

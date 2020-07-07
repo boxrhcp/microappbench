@@ -10,7 +10,7 @@ val log = LoggerFactory.getLogger("MonitorRetriever")!!
 fun main(args: Array<String>) = mainBody {
     ArgParser(args).parseInto(::MonitorRetrieverArguments).run {
         val retriever = MonitoringRetrieval(baseUrl, kialiPort, prometheusPort, start, end)
-        //retriever.retrieveKiali()
+        retriever.retrieveKiali()
         retriever.retrievePrometheus()
     }
 }

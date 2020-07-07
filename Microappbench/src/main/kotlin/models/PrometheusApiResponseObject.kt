@@ -1,4 +1,4 @@
 package models
 
-class PrometheusApiResponseObject: ApiResponseInterface {
+class PrometheusApiResponseObject {
 }

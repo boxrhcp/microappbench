@@ -12,7 +12,7 @@ import models.ApiRequestObject
 import org.slf4j.LoggerFactory
 
 class ApiHandler {
-    private val log = LoggerFactory.getLogger("PrometheusHandler")!!
+    private val log = LoggerFactory.getLogger("ApiHandler")!!
 
     suspend fun makeApiRequest(apiRequest: ApiRequestObject) {
         val maxContentLen = 200

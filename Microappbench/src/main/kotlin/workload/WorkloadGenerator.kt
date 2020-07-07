@@ -4,7 +4,7 @@ import org.slf4j.LoggerFactory
 import run.ScriptRunner
 
 class WorkloadGenerator () {
-    private val log = LoggerFactory.getLogger("BenchMarkPlan")
+    private val log = LoggerFactory.getLogger("Workload Generator")!!
 
 
     fun executeBenchmark(ipToBenchmark: String, firstVersion: String, secondVersion: String) {
