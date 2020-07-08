@@ -1,16 +1,13 @@
-package workload
+package api
 
 import com.google.gson.JsonParser
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import models.*
+import api.models.*
 import org.slf4j.LoggerFactory
-import run.ApiHandler
 import java.util.*
 import kotlin.collections.ArrayList
 
-class MonitoringRetrieval(
+class ApiRetrieval(
     private val baseUrl: String,
     private val kialiPort: String,
     private val prometheusPort: String,
@@ -44,7 +41,6 @@ class MonitoringRetrieval(
         runBlocking {
             apiHandler.makeApiRequest(request)
         }
-        log.info("wwowwww" + request.response)
         val results = JsonParser().parse(request.response).asJsonObject.getAsJsonArray("data")
         val traces = ArrayList<TraceApiObject>()
         for (traceElement in results) {
@@ -162,7 +158,6 @@ class MonitoringRetrieval(
 
             val results =
                 JsonParser().parse(request.response).asJsonObject.getAsJsonObject("data").getAsJsonArray("result")
-            //log.info(request.response)
             for (resultElem in results) {
                 val type = measurement.first
                 val result = resultElem.asJsonObject

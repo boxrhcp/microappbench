@@ -1,4 +1,4 @@
-package models
+package api.models
 
 data class TraceApiObject(
     val traceId: String,

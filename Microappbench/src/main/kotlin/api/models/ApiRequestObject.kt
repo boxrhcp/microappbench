@@ -1,4 +1,4 @@
-package models
+package api.models
 
 import com.google.gson.JsonElement
 

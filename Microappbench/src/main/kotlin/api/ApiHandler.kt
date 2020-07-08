@@ -1,4 +1,4 @@
-package run
+package api
 
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -8,7 +8,7 @@ import io.ktor.client.response.readText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.content.TextContent
-import models.ApiRequestObject
+import api.models.ApiRequestObject
 import org.slf4j.LoggerFactory
 
 class ApiHandler {

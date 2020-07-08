@@ -12,6 +12,6 @@ fun main(args: Array<String>) = mainBody {
     ArgParser(args).parseInto(::BenchmarkRunnerArguments).run {
 
         val generator = WorkloadGenerator()
-        generator.executeBenchmark(ipToBenchmark, firstVersion, secondVersion)
+        generator.executeBenchmark(ipToBenchmark, firstVersion, secondVersion, build)
     }
 }

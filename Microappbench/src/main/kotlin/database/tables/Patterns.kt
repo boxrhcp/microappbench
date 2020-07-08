@@ -9,6 +9,6 @@ object Patterns : IntIdTable() {
     val patternName = varchar("patternName", 50)
     val requestId = integer("request_id")
     val workerId = integer("woerker_id")
-    val start = datetime("start")
-    val end = datetime("end")
+    val start = long("start")
+    val end = long("end")
 }

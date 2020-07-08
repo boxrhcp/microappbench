@@ -11,22 +11,18 @@ val log = LoggerFactory.getLogger("Analyzer")!!
 fun main(args: Array<String>) = mainBody {
     ArgParser(args).parseInto(::AnalyzerArguments).run {
         val db = DatabaseOperator()
-        if (clean) {
-            db.dropTables()
-            db.createTables()
-        }
         val patternId = db.insertPattern(
             "orders", "v2", "LIST"
-            , 1, 0, DateTime.now(), DateTime.now()
+            , 1, 0, 0L, 0L
         )
-        db.insertOperation(patternId, "asdasd", "asdasd", 1, DateTime.now(), DateTime.now())
-        val traceId = db.insertTrace("asdafiadsif", "v2", DateTime.now(), DateTime.now())
+        db.insertOperation(patternId, "asdasd", "asdasd", 1, 0L, 0L)
+        val traceId = db.insertTrace("asdafiadsif", "v2", 0L, 0L)
         val spanId = db.insertSpan(
             "asdsada",
             traceId,
             "v2",
-            DateTime.now(),
-            DateTime.now(),
+            0L,
+            0L,
             "neps",
             "GET",
             200,

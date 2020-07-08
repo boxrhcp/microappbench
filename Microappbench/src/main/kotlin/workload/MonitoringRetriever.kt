@@ -1,0 +1,56 @@
+package workload
+
+import api.ApiRetrieval
+import database.DatabaseOperator
+import org.slf4j.LoggerFactory
+
+class MonitoringRetriever(baseUrl: String, kialiPort: String, prometheusPort: String, start: Long, end: Long) {
+    private val log = LoggerFactory.getLogger("MonitoringRetriever")!!
+    private val retriever = ApiRetrieval(baseUrl, kialiPort, prometheusPort, start, end)
+    private val db = DatabaseOperator()
+
+    fun clean() {
+        db.dropTables()
+        db.createTables()
+    }
+
+    fun downloadKiali() {
+        val traces = retriever.retrieveKiali()
+        try {
+            for (trace in traces) {
+                val traceId = db.insertTrace(trace.traceId, trace.version, trace.start, trace.end)
+                for (span in trace.spans) {
+                    db.insertSpan(
+                        span.spanId,
+                        traceId,
+                        trace.version,
+                        span.start,
+                        span.end,
+                        span.process,
+                        span.httpMethod,
+                        span.httpStatus,
+                        span.httpUrl,
+                        span.requestSize,
+                        span.responseSize
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            log.error("Error loading kiali API data to db: ${e.message}")
+        }
+
+    }
+
+    fun downloadPrometheus() {
+        val prometheusData = retriever.retrievePrometheus()
+        try {
+            for (data in prometheusData) {
+                for(value in data.values){
+                    db.insertPrometheusData(data.type, data.pod, value.time, value.value)
+                }
+            }
+        } catch (e: Exception) {
+            log.error("Error loading prometheus API data to db: ${e.message}")
+        }
+    }
+}

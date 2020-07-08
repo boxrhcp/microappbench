@@ -3,8 +3,8 @@ package database
 import database.tables.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 
 class DatabaseOperator {
     private val log = LoggerFactory.getLogger("DatabaseOperator")!!
@@ -35,13 +35,13 @@ class DatabaseOperator {
         _patternName: String,
         _requestId: Int,
         _workId: Int,
-        _start: DateTime,
-        _end: DateTime
+        _start: Long,
+        _end: Long
     ): Int {
         log.info("inserting pattern")
         var result = 0
         transaction {
-            val id = Patterns.insertAndGetId{
+            val id = Patterns.insertAndGetId {
                 it[resource] = _resource
                 it[version] = _version
                 it[patternName] = _patternName
@@ -61,9 +61,9 @@ class DatabaseOperator {
         _path: String,
         _operation: String,
         _index: Int,
-        _start: DateTime,
-        _end: DateTime
-    ):Int {
+        _start: Long,
+        _end: Long
+    ): Int {
         log.info("inserting operation")
         var result = 0
         transaction {
@@ -81,7 +81,7 @@ class DatabaseOperator {
         return result
     }
 
-    fun insertTrace(_traceId: String, _version: String, _start: DateTime, _end: DateTime): Int {
+    fun insertTrace(_traceId: String, _version: String, _start: Long, _end: Long): Int {
         log.info("inserting trace")
         var result = 0
         transaction {
@@ -101,8 +101,8 @@ class DatabaseOperator {
         _spanId: String,
         _traceId: Int,
         _version: String,
-        _start: DateTime,
-        _end: DateTime,
+        _start: Long,
+        _end: Long,
         _process: String,
         _httpMethod: String,
         _httpStatusCode: Int,
@@ -125,6 +125,27 @@ class DatabaseOperator {
                 it[httpStatusCode] = _httpStatusCode
                 it[requestSize] = _requestSize
                 it[responseSize] = _responseSize
+            }
+            commit()
+            result = id.value
+        }
+        return result
+    }
+
+    fun insertPrometheusData(
+        _type: String,
+        _pod: String,
+        _time: Long,
+        _value: BigDecimal
+    ): Int {
+        log.info("Inserting prometheus data")
+        var result = 0
+        transaction {
+            val id = PrometheusDatas.insertAndGetId {
+                it[type] = _type
+                it[pod] = _pod
+                it[time] = _time
+                it[value] = _value
             }
             commit()
             result = id.value

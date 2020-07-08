@@ -33,4 +33,9 @@ class MonitorRetrieverArguments(parser: ArgParser) {
         "-e", "--end",
         help = "end time of benchmark"
     ) { toLong() }
+
+    val clean by parser.flagging(
+        "-c", "--clean",
+        help = "clean existing db"
+    ).default(false)
 }

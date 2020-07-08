@@ -8,7 +8,7 @@ object Operations : IntIdTable() {
     val path = varchar("path",50)
     val operation = varchar("operation", 50)
     val index = integer("index")
-    val start = datetime("start")
-    val end = datetime("end")
+    val start = long("start")
+    val end = long("end")
 
 }

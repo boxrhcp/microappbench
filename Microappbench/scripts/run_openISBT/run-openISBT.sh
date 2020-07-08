@@ -1,4 +1,4 @@
- #!/bin/bash
+#!/bin/bash
 address="http://localhost:80"
 version="v1"
 worker_port="8000"
@@ -30,11 +30,11 @@ do
     esac
 done
 
-java -jar openISBTWorker-1.0-SNAPSHOT.jar $worker_port &
+java -jar jars/openISBTWorker-1.0-SNAPSHOT.jar $worker_port &
 worker_pid=$!
 
 sleep 3
 
-java -jar runner-1.0-SNAPSHOT-all.jar -o -r results-$service-$version.json -w workload-$service-$version.json -e http://$address -t 5 -u localhost:$worker_port
+java -jar jars/runner-1.0-SNAPSHOT-all.jar -o -r results/results-$service-$version.json -w config/workload-$service-$version.json -e http://$address -t 5 -u localhost:$worker_port
 
 kill -KILL $worker_pid

@@ -1,4 +1,4 @@
-package models
+package api.models
 
 data class SpanApiObject(
     val spanId: String,
