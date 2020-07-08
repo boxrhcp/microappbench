@@ -22,7 +22,7 @@ class MonitoringRetrieval(
     private val log = LoggerFactory.getLogger("MonitoringRetrieval")!!
 
 
-    fun retrieveKiali() {
+    fun retrieveKiali(): ArrayList<TraceApiObject> {
         log.info("Retrieving Kiali information")
         val auth = "admin:admin"
         val parameterList = ArrayList<Pair<String, String>>()
@@ -110,59 +110,83 @@ class MonitoringRetrieval(
             log.debug("Adding trace - traceId:$traceId version:$version traceStart:$traceStart traceEnd:$traceEnd")
             traces.add(TraceApiObject(traceId, version, traceStart, traceEnd, spans))
         }
-
+        return traces
     }
 
-    fun retrievePrometheus() {
-        log.info("Retrieving prometheus information")
-        val parameterList = ArrayList<Pair<String, String>>()
-        parameterList.add(
+    fun retrievePrometheus(): ArrayList<PrometheusApiObject> {
+        //TODO: fin better way to organize this
+        val measurements = ArrayList<Pair<String, String>>()
+        measurements.add(
             Pair(
-                "query",
+                "cpu",
                 "sum(rate(container_cpu_usage_seconds_total{container_name!=\"POD\",pod_name!=\"\"}[5m])) by (pod_name)"
             )
         )
-        parameterList.add(Pair("start", start.toString()))
-        parameterList.add(Pair("end", end.toString()))
-        parameterList.add(Pair("step", "5s"))
-        val queryPath = "/api/v1/query_range"
-        val headerList = ArrayList<Pair<String, String>>()
-
-        val request = ApiRequestObject(
-            "prometheus",
-            "$baseUrl:$prometheusPort$queryPath",
-            parameterList.toTypedArray(),
-            headerList.toTypedArray(),
-            "GET",
-            body = JsonParser().parse(""),
-            response = "",
-            status = 0
+        measurements.add(
+            Pair(
+                "memory",
+                "sum(rate(container_memory_usage_bytes{container_name!=\"POD\",container_name!=\"\"}[5m])) by (pod_name)"
+            )
         )
-
-        runBlocking {
-            apiHandler.makeApiRequest(request)
-        }
+        measurements.add(Pair("sentBytes", "sum(rate(container_network_transmit_bytes_total[5m])) by (pod_name)"))
+        measurements.add(Pair("receivedBytes", "sum(rate(container_network_receive_bytes_total[5m]))by (pod_name)"))
         val prometheusData = ArrayList<PrometheusApiObject>()
-        val results =
-            JsonParser().parse(request.response).asJsonObject.getAsJsonObject("data").getAsJsonArray("result")
-        for (resultElem in results) {
-            val type = "try"
-            val result = resultElem.asJsonObject
-            val pod = result.getAsJsonObject("metric").get("pod_name").asString
-            val values = result.getAsJsonArray("values")
-            val metrics = ArrayList<PrometheusValuesObject>()
-            for(valueElem in values){
-                val tuple = valueElem.asJsonArray
-                val timestamp = tuple.get(0).asLong
-                val value = tuple.get(1).asBigDecimal
-                metrics.add(PrometheusValuesObject(timestamp, value))
-                log.debug("Adding values for pod $pod - timestamp:$timestamp value:$value")
+        for (measurement in measurements) {
+            log.info("Retrieving prometheus ${measurement.first} information")
+            val parameterList = ArrayList<Pair<String, String>>()
+            parameterList.add(
+                Pair(
+                    "query", measurement.second
+                )
+            )
+            parameterList.add(Pair("start", start.toString()))
+            parameterList.add(Pair("end", end.toString()))
+            parameterList.add(Pair("step", "5s"))
+            val queryPath = "/api/v1/query_range"
+            val headerList = ArrayList<Pair<String, String>>()
+
+            val request = ApiRequestObject(
+                "prometheus",
+                "$baseUrl:$prometheusPort$queryPath",
+                parameterList.toTypedArray(),
+                headerList.toTypedArray(),
+                "GET",
+                body = JsonParser().parse(""),
+                response = "",
+                status = 0
+            )
+
+            runBlocking {
+                apiHandler.makeApiRequest(request)
             }
 
-            log.debug("Adding prometheus data - type:$type pod:$pod")
-            prometheusData.add(PrometheusApiObject(type, pod, metrics))
-        }
+            val results =
+                JsonParser().parse(request.response).asJsonObject.getAsJsonObject("data").getAsJsonArray("result")
+            //log.info(request.response)
+            for (resultElem in results) {
+                val type = measurement.first
+                val result = resultElem.asJsonObject
+                var pod = ""
+                if (result.getAsJsonObject("metric").has("pod_name")) {
+                    log.info("is not null")
+                    pod =
+                        result.getAsJsonObject("metric").get("pod_name").asString
+                }
+                val values = result.getAsJsonArray("values")
+                val metrics = ArrayList<PrometheusValuesObject>()
+                for (valueElem in values) {
+                    val tuple = valueElem.asJsonArray
+                    val timestamp = tuple.get(0).asLong
+                    val value = tuple.get(1).asBigDecimal
+                    metrics.add(PrometheusValuesObject(timestamp, value))
+                    log.debug("Adding values for pod $pod - timestamp:$timestamp value:$value")
+                }
 
+                log.debug("Adding prometheus data - type:$type pod:$pod")
+                prometheusData.add(PrometheusApiObject(type, pod, metrics))
+            }
+        }
+        return prometheusData
     }
 
 

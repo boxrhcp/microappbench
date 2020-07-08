@@ -12,5 +12,6 @@ fun main(args: Array<String>) = mainBody {
         val retriever = MonitoringRetrieval(baseUrl, kialiPort, prometheusPort, start, end)
         retriever.retrieveKiali()
         retriever.retrievePrometheus()
+        log.info("end")
     }
 }
