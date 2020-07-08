@@ -1,12 +1,10 @@
 package models
 
-import org.joda.time.DateTime
-
-data class TraceObject(
+data class TraceApiObject(
     val traceId: String,
     var version: String,
     var start: Long,
     var end: Long,
-    val spans: ArrayList<SpanObject>
+    val spans: ArrayList<SpanApiObject>
 ) {
 }

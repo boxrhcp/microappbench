@@ -24,13 +24,13 @@ class MonitorRetrieverArguments(parser: ArgParser) {
         help = "path of artifact to benchmark"
     ).default("20001")
 
-    val start: String by parser.storing(
+    val start by parser.storing(
         "-s", "--start",
         help = "start time of benchmark"
-    )
+    ) { toLong() }
 
-    val end: String by parser.storing(
+    val end by parser.storing(
         "-e", "--end",
         help = "end time of benchmark"
-    )
+    ) { toLong() }
 }

@@ -7,5 +7,5 @@ object PrometheusDatas: IntIdTable() {
     val type = varchar("type", 10)
     val pod = varchar("pod", 30)
     val time = datetime("time")
-    val value = float("value")
+    val value = decimal("value",30,19)
 }

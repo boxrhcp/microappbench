@@ -1,9 +1,6 @@
 package models
 
-import org.joda.time.DateTime
-
-
-data class SpanObject (
+data class SpanApiObject(
     val spanId: String,
     val parentId: String,
     val start: Long, //accuracy
@@ -14,5 +11,5 @@ data class SpanObject (
     val responseSize: Int,
     val requestSize: Int,
     val process: String
-){
+) {
 }
