@@ -18,12 +18,12 @@
     </appender>
 
 
-    <root level="debug">
+    <root level="info">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="FILE"/>
     </root>
 
-    <logger name="ApiHandler" level="DEBUG"/>
+    <logger name="ApiHandler" level="INFO"/>
     <logger name="org.eclipse.jetty" level="INFO"/>
     <logger name="io.netty" level="INFO"/>
 </configuration>

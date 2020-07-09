@@ -115,17 +115,17 @@ class ApiRetrieval(
         measurements.add(
             Pair(
                 "cpu",
-                "sum(rate(container_cpu_usage_seconds_total{container_name!=\"POD\",pod_name!=\"\"}[5m])) by (pod_name)"
+                "sum(rate(container_cpu_usage_seconds_total{container_name!=\"POD\",pod_name!=\"\"}[1m])) by (pod_name)"
             )
         )
         measurements.add(
             Pair(
                 "memory",
-                "sum(rate(container_memory_usage_bytes{container_name!=\"POD\",container_name!=\"\"}[5m])) by (pod_name)"
+                "sum(rate(container_memory_usage_bytes{container_name!=\"POD\",container_name!=\"\"}[1m])) by (pod_name)"
             )
         )
-        measurements.add(Pair("sentBytes", "sum(rate(container_network_transmit_bytes_total[5m])) by (pod_name)"))
-        measurements.add(Pair("receivedBytes", "sum(rate(container_network_receive_bytes_total[5m]))by (pod_name)"))
+        measurements.add(Pair("sentBytes", "sum(rate(container_network_transmit_bytes_total[1m])) by (pod_name)"))
+        measurements.add(Pair("receivedBytes", "sum(rate(container_network_receive_bytes_total[1m]))by (pod_name)"))
         val prometheusData = ArrayList<PrometheusApiObject>()
         for (measurement in measurements) {
             log.info("Retrieving prometheus ${measurement.first} information")
@@ -163,9 +163,18 @@ class ApiRetrieval(
                 val result = resultElem.asJsonObject
                 var pod = ""
                 if (result.getAsJsonObject("metric").has("pod_name")) {
-                    log.info("is not null")
                     pod =
                         result.getAsJsonObject("metric").get("pod_name").asString
+                    if (pod.contains("kube") || pod.contains(
+                            "stackdriver"
+                        ) || pod.contains("istiod") || pod.contains("istio-tracing") || pod.contains(
+                            "fluentd"
+                        ) || pod.contains("prometheus") || pod.contains("kiali") || pod.contains("grafana") || pod.contains(
+                            "metrics-server"
+                        ) || pod.contains("l7-default-backend") || pod.contains("istio-egress") || pod.contains("heapster-gke") || pod.contains(
+                            "event-exporter"
+                        )
+                    ) continue
                 }
                 val values = result.getAsJsonArray("values")
                 val metrics = ArrayList<PrometheusValuesObject>()

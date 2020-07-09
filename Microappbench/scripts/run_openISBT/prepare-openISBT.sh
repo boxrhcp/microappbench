@@ -37,6 +37,7 @@ if [ $flag_build -eq 1 ]; then
     gradle buildRunTool
     #gradle buildBoxPlotTool
 
+    mkdir ../../Microappbench/scripts/run_openISBT/jars
     cp build/libs/matchingTool-1.0-SNAPSHOT-all.jar ../../Microappbench/scripts/run_openISBT/jars/
     cp build/libs/wlgenerator-1.0-SNAPSHOT-all.jar ../../Microappbench/scripts/run_openISBT/jars/
     cp build/libs/runner-1.0-SNAPSHOT-all.jar ../../Microappbench/scripts/run_openISBT/jars/
