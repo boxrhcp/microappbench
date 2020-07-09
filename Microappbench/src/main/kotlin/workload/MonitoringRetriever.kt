@@ -84,6 +84,8 @@ class MonitoringRetriever(baseUrl: String, kialiPort: String, prometheusPort: St
                         patternId,
                         operation.path,
                         operation.operation,
+                        operation.concretePath,
+                        operation.concreteMethod,
                         operation.index,
                         operation.start,
                         operation.end,

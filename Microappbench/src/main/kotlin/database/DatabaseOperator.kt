@@ -63,6 +63,8 @@ class DatabaseOperator {
         _patternId: Int,
         _path: String,
         _operation: String,
+        _concretePath: String,
+        _concreteMethod: String,
         _index: Int,
         _start: Long,
         _end: Long,
@@ -75,6 +77,8 @@ class DatabaseOperator {
                 it[patternId] = _patternId
                 it[path] = _path
                 it[operation] = _operation
+                it[concretePath] = _concretePath
+                it[concreteMethod] = _concreteMethod
                 it[index] = _index
                 it[start] = _start
                 it[end] = _end

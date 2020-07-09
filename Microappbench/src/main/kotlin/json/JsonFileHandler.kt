@@ -21,12 +21,25 @@ class JsonFileHandler {
                 val operation = operationElem.asJsonObject
                 val path = operation.get("path").asString
                 val operationName = operation.get("abstractOperation").asString
+                val concretePath = operation.get("concretePath").asString
+                val concreteMethod = operation.get("concreteMethod").asString
                 val index = operation.get("index").asInt
                 val start = operation.get("start").asLong
                 val end = operation.get("end").asLong
                 val duration = end - start
-                log.debug("Loading operation from json file to db - path:$path operationName:$operationName index:$index start:$start end:$end duration:$duration")
-                operations.add(OperationJson(path, operationName, index, start, end, duration))
+                log.debug("Loading operation from json file to db - path:$path operationName:$operationName concretePath:$concretePath concreteMethod:$concreteMethod index:$index start:$start end:$end duration:$duration")
+                operations.add(
+                    OperationJson(
+                        path,
+                        operationName,
+                        concretePath,
+                        concreteMethod,
+                        index,
+                        start,
+                        end,
+                        duration
+                    )
+                )
             }
             val resource = pattern.get("resource").asString
             val patternName = pattern.get("patternName").asString
@@ -36,7 +49,19 @@ class JsonFileHandler {
             val end = pattern.get("end").asLong
             val duration = end - start
             log.debug("Loading pattern from json to db - resource:$resource version:$version patternName:$patternName requestId:$requestId workerId:$workerId start:$start end:$end duration:$duration")
-            results.add(PatternJson(resource, version, patternName, requestId, workerId, start, end, duration, operations))
+            results.add(
+                PatternJson(
+                    resource,
+                    version,
+                    patternName,
+                    requestId,
+                    workerId,
+                    start,
+                    end,
+                    duration,
+                    operations
+                )
+            )
         }
         return results
     }
