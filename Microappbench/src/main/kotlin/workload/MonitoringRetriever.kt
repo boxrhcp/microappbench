@@ -20,7 +20,15 @@ class MonitoringRetriever(baseUrl: String, kialiPort: String, prometheusPort: St
         val traces = retriever.retrieveKiali()
         try {
             for (trace in traces) {
-                val traceId = db.insertTrace(trace.traceId, trace.version, trace.start, trace.end)
+                val traceId = db.insertTrace(
+                    trace.traceId,
+                    trace.version,
+                    trace.traceUrl,
+                    trace.traceMethod,
+                    trace.start,
+                    trace.end,
+                    trace.duration
+                )
                 for (span in trace.spans) {
                     db.insertSpan(
                         span.spanId,
@@ -28,6 +36,7 @@ class MonitoringRetriever(baseUrl: String, kialiPort: String, prometheusPort: St
                         trace.version,
                         span.start,
                         span.end,
+                        span.duration,
                         span.process,
                         span.httpMethod,
                         span.httpStatus,
@@ -67,7 +76,8 @@ class MonitoringRetriever(baseUrl: String, kialiPort: String, prometheusPort: St
                     pattern.requestId,
                     pattern.workerId,
                     pattern.start,
-                    pattern.end
+                    pattern.end,
+                    pattern.duration
                 )
                 for (operation in pattern.operations) {
                     db.insertOperation(
@@ -76,7 +86,8 @@ class MonitoringRetriever(baseUrl: String, kialiPort: String, prometheusPort: St
                         operation.operation,
                         operation.index,
                         operation.start,
-                        operation.end
+                        operation.end,
+                        operation.duration
                     )
                 }
             }

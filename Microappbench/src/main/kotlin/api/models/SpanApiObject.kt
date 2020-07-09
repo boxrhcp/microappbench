@@ -5,6 +5,7 @@ data class SpanApiObject(
     val parentId: String,
     val start: Long, //accuracy
     val end: Long,
+    val duration: Long,
     val httpMethod: String,
     val httpUrl: String,
     val httpStatus: Int,

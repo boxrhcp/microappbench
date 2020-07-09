@@ -8,6 +8,7 @@ object Spans: IntIdTable() {
     val version = varchar("version", 10)
     val start = long("start")
     val end = long("end")
+    val duration = long("duration")
     val process = varchar("process", 50)
     val httpMethod = varchar("http_method", 10)
     val httpUrl = varchar("http_url", 100)

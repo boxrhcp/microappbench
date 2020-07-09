@@ -1,5 +1,6 @@
 package database
 
+import database.models.TraceAggObject
 import database.tables.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -36,7 +37,8 @@ class DatabaseOperator {
         _requestId: Int,
         _workId: Int,
         _start: Long,
-        _end: Long
+        _end: Long,
+        _duration: Long
     ): Int {
         log.info("inserting pattern")
         var result = 0
@@ -49,6 +51,7 @@ class DatabaseOperator {
                 it[workerId] = _workId
                 it[start] = _start
                 it[end] = _end
+                it[duration] = _duration
             }
             commit()
             result = id.value
@@ -62,7 +65,8 @@ class DatabaseOperator {
         _operation: String,
         _index: Int,
         _start: Long,
-        _end: Long
+        _end: Long,
+        _duration: Long
     ): Int {
         log.info("inserting operation")
         var result = 0
@@ -74,6 +78,7 @@ class DatabaseOperator {
                 it[index] = _index
                 it[start] = _start
                 it[end] = _end
+                it[duration] = _duration
             }
             commit()
             result = id.value
@@ -81,15 +86,26 @@ class DatabaseOperator {
         return result
     }
 
-    fun insertTrace(_traceId: String, _version: String, _start: Long, _end: Long): Int {
+    fun insertTrace(
+        _traceId: String,
+        _version: String,
+        _traceUrl: String,
+        _traceMethod: String,
+        _start: Long,
+        _end: Long,
+        _duration: Long
+    ): Int {
         log.info("inserting trace")
         var result = 0
         transaction {
             val id = Traces.insertAndGetId {
                 it[traceId] = _traceId
                 it[version] = _version
+                it[traceUrl] = _traceUrl
+                it[traceMethod] = _traceMethod
                 it[start] = _start
                 it[end] = _end
+                it[duration] = _duration
             }
             commit()
             result = id.value
@@ -103,6 +119,7 @@ class DatabaseOperator {
         _version: String,
         _start: Long,
         _end: Long,
+        _duration: Long,
         _process: String,
         _httpMethod: String,
         _httpStatusCode: Int,
@@ -119,6 +136,7 @@ class DatabaseOperator {
                 it[version] = _version
                 it[start] = _start
                 it[end] = _end
+                it[duration] = _duration
                 it[process] = _process
                 it[httpMethod] = _httpMethod
                 it[httpUrl] = _httpUrl
@@ -151,5 +169,15 @@ class DatabaseOperator {
             result = id.value
         }
         return result
+    }
+
+    fun aggregateTraces(): ArrayList<TraceAggObject> {
+        val query = Traces.slice(Traces.traceMethod, Traces.version, Traces.duration.avg()).selectAll()
+            .groupBy(Traces.traceMethod, Traces.version)
+        val results = ArrayList<TraceAggObject>()
+        query.forEach {
+            results.add(TraceAggObject(it[Traces.traceMethod], it[Traces.version], it[Traces.duration.avg()]!!))
+        }
+        return results
     }
 }

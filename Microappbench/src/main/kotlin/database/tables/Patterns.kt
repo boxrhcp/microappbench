@@ -10,4 +10,5 @@ object Patterns : IntIdTable() {
     val workerId = integer("worker_id")
     val start = long("start")
     val end = long("end")
+    val duration = long("duration")
 }

@@ -5,6 +5,7 @@ data class OperationJson(
     val operation: String,
     val index: Int,
     val start: Long,
-    val end: Long
+    val end: Long,
+    val duration: Long
 ) {
 }

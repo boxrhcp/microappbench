@@ -8,6 +8,7 @@ data class PatternJson(
     val workerId: Int,
     val start: Long,
     val end: Long,
+    val duration: Long,
     val operations: ArrayList<OperationJson>
 ) {
 }

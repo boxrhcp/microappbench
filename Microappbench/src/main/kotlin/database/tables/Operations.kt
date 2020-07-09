@@ -9,5 +9,6 @@ object Operations : IntIdTable() {
     val index = integer("index")
     val start = long("start")
     val end = long("end")
+    val duration = long("duration")
 
 }
