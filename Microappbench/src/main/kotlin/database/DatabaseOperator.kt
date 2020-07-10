@@ -1,5 +1,6 @@
 package database
 
+import database.models.PatternAggObject
 import database.models.TraceAggObject
 import database.tables.*
 import org.jetbrains.exposed.sql.*
@@ -176,11 +177,34 @@ class DatabaseOperator {
     }
 
     fun aggregateTraces(): ArrayList<TraceAggObject> {
-        val query = Traces.slice(Traces.traceMethod, Traces.version, Traces.duration.avg()).selectAll()
-            .groupBy(Traces.traceMethod, Traces.version)
         val results = ArrayList<TraceAggObject>()
-        query.forEach {
-            results.add(TraceAggObject(it[Traces.traceMethod], it[Traces.version], it[Traces.duration.avg()]!!))
+        transaction {
+            val query = Traces.slice(Traces.traceMethod, Traces.version, Traces.duration.avg()).selectAll()
+                .groupBy(Traces.traceMethod, Traces.version)
+
+            query.forEach {
+                results.add(TraceAggObject(it[Traces.traceMethod], it[Traces.version], it[Traces.duration.avg()]!!))
+            }
+        }
+        return results
+    }
+
+    fun aggregatePatterns(): ArrayList<PatternAggObject> {
+        val results = ArrayList<PatternAggObject>()
+        transaction {
+            val query =
+                Patterns.slice(Patterns.resource, Patterns.version, Patterns.patternName, Patterns.duration.avg())
+                    .selectAll().groupBy(Patterns.resource, Patterns.version, Patterns.patternName)
+            query.forEach {
+                results.add(
+                    PatternAggObject(
+                        it[Patterns.resource],
+                        it[Patterns.version],
+                        it[Patterns.patternName],
+                        it[Patterns.duration.avg()]!!
+                    )
+                )
+            }
         }
         return results
     }
