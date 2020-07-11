@@ -23,17 +23,19 @@ class JsonFileHandler {
                 val operationName = operation.get("abstractOperation").asString
                 val concretePath = operation.get("concretePath").asString
                 val concreteMethod = operation.get("concreteMethod").asString
+                val headerId = operation.get("headerId").asString
                 val index = operation.get("index").asInt
                 val start = operation.get("start").asLong
                 val end = operation.get("end").asLong
                 val duration = end - start
-                log.debug("Loading operation from json file to db - path:$path operationName:$operationName concretePath:$concretePath concreteMethod:$concreteMethod index:$index start:$start end:$end duration:$duration")
+                log.debug("Loading operation from json file to db - path:$path operationName:$operationName concretePath:$concretePath concreteMethod:$concreteMethod headerId:$headerId index:$index start:$start end:$end duration:$duration")
                 operations.add(
                     OperationJson(
                         path,
                         operationName,
                         concretePath,
                         concreteMethod,
+                        headerId,
                         index,
                         start,
                         end,

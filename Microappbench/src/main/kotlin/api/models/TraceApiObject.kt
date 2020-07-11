@@ -5,6 +5,7 @@ data class TraceApiObject(
     val version: String,
     val traceUrl: String,
     val traceMethod: String,
+    val headerId: String,
     val start: Long,
     val end: Long,
     val duration: Long,

@@ -51,6 +51,7 @@ class ApiRetrieval(
             var traceEnd = 0L
             var traceUrl = ""
             var traceMethod = ""
+            var traceHeaderId = ""
             val spans = ArrayList<SpanApiObject>()
             for (spanElement in trace.getAsJsonArray("spans")) {
                 val span = spanElement.asJsonObject
@@ -75,6 +76,7 @@ class ApiRetrieval(
                 var httpMethod = ""
                 var httpStatus = 0
                 var httpUrl = ""
+                var headerId = ""
                 for (tagElement in span.getAsJsonArray("tags")) {
                     val tag = tagElement.asJsonObject
                     when (tag.get("key").asString) {
@@ -83,6 +85,7 @@ class ApiRetrieval(
                         "http.method" -> httpMethod = tag.get("value").asString
                         "http.status_code" -> httpStatus = tag.get("value").asInt
                         "http.url" -> httpUrl = tag.get("value").asString
+                        "guid:x-request-id" -> headerId = tag.get("value").asString
                         "node_id" -> { //TODO: IMPROVE IT TO BE OPEN
                             if (tag.get("value").asString.contains("orders-v2")) {
                                 version = "v2"
@@ -93,6 +96,8 @@ class ApiRetrieval(
                 if (process == "istio-ingressgateway") {
                     traceUrl = httpUrl
                     traceMethod = httpMethod
+                    traceHeaderId = headerId
+
                 }
                 log.debug("Adding span - spanId:$spanId parentId:$parentId start:$start end:$end duration:$duration httpMethod:$httpMethod httpUrl:$httpUrl httpStatus:$httpStatus responseSize:$responseSize requestSize:$requestSize process:$process")
                 spans.add(
@@ -113,8 +118,8 @@ class ApiRetrieval(
             }
 
             val duration = traceEnd - traceStart
-            log.debug("Adding trace - traceId:$traceId version:$version traceUrl:$traceUrl traceMethod:$traceMethod traceStart:$traceStart duration:$duration traceEnd:$traceEnd")
-            traces.add(TraceApiObject(traceId, version, traceUrl, traceMethod, traceStart, traceEnd, duration, spans))
+            log.debug("Adding trace - traceId:$traceId version:$version traceUrl:$traceUrl traceMethod:$traceMethod traceHeaderId:$traceHeaderId traceStart:$traceStart duration:$duration traceEnd:$traceEnd")
+            traces.add(TraceApiObject(traceId, version, traceUrl, traceMethod, traceHeaderId, traceStart, traceEnd, duration, spans))
         }
         return traces
     }

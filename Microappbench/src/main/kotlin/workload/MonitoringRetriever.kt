@@ -25,6 +25,7 @@ class MonitoringRetriever(baseUrl: String, kialiPort: String, prometheusPort: St
                     trace.version,
                     trace.traceUrl,
                     trace.traceMethod,
+                    trace.headerId,
                     trace.start,
                     trace.end,
                     trace.duration
@@ -86,6 +87,7 @@ class MonitoringRetriever(baseUrl: String, kialiPort: String, prometheusPort: St
                         operation.operation,
                         operation.concretePath,
                         operation.concreteMethod,
+                        operation.headerId,
                         operation.index,
                         operation.start,
                         operation.end,

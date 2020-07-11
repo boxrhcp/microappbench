@@ -5,6 +5,7 @@ data class OperationJson(
     val operation: String,
     val concretePath: String,
     val concreteMethod: String,
+    val headerId: String,
     val index: Int,
     val start: Long,
     val end: Long,

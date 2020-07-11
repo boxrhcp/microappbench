@@ -66,6 +66,7 @@ class DatabaseOperator {
         _operation: String,
         _concretePath: String,
         _concreteMethod: String,
+        _headerId: String,
         _index: Int,
         _start: Long,
         _end: Long,
@@ -80,6 +81,7 @@ class DatabaseOperator {
                 it[operation] = _operation
                 it[concretePath] = _concretePath
                 it[concreteMethod] = _concreteMethod
+                it[headerId] = _headerId
                 it[index] = _index
                 it[start] = _start
                 it[end] = _end
@@ -96,6 +98,7 @@ class DatabaseOperator {
         _version: String,
         _traceUrl: String,
         _traceMethod: String,
+        _headerId: String,
         _start: Long,
         _end: Long,
         _duration: Long
@@ -108,6 +111,7 @@ class DatabaseOperator {
                 it[version] = _version
                 it[traceUrl] = _traceUrl
                 it[traceMethod] = _traceMethod
+                it[headerId] = _headerId
                 it[start] = _start
                 it[end] = _end
                 it[duration] = _duration
