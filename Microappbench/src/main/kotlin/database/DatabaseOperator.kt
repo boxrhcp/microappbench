@@ -2,6 +2,7 @@ package database
 
 import database.models.PatternAggObject
 import database.models.TraceAggObject
+import database.models.TraceMatchObject
 import database.tables.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -134,7 +135,8 @@ class DatabaseOperator {
         _httpStatusCode: Int,
         _httpUrl: String,
         _requestSize: Int,
-        _responseSize: Int
+        _responseSize: Int,
+        _parentId: String
     ): Int {
         log.info("inserting Span")
         var result = 0
@@ -152,6 +154,7 @@ class DatabaseOperator {
                 it[httpStatusCode] = _httpStatusCode
                 it[requestSize] = _requestSize
                 it[responseSize] = _responseSize
+                it[parentId] = _parentId
             }
             commit()
             result = id.value
@@ -193,12 +196,14 @@ class DatabaseOperator {
         return results
     }
 
-    fun aggregatePatterns(): ArrayList<PatternAggObject> {
+    fun aggregatePatterns(version: String): ArrayList<PatternAggObject> {
+        log.info("Querying aggregated patterns")
         val results = ArrayList<PatternAggObject>()
         transaction {
             val query =
                 Patterns.slice(Patterns.resource, Patterns.version, Patterns.patternName, Patterns.duration.avg())
-                    .selectAll().groupBy(Patterns.resource, Patterns.version, Patterns.patternName)
+                    .select { Patterns.version eq version }
+                    .groupBy(Patterns.resource, Patterns.version, Patterns.patternName)
             query.forEach {
                 results.add(
                     PatternAggObject(
@@ -206,6 +211,51 @@ class DatabaseOperator {
                         it[Patterns.version],
                         it[Patterns.patternName],
                         it[Patterns.duration.avg()]!!
+                    )
+                )
+            }
+        }
+        return results
+    }
+
+    fun getTracesMatchedWithPattern(pattern: PatternAggObject, version: String): ArrayList<TraceMatchObject> {
+        log.info("Querying traces from given pattern - resource: ${pattern.resource} pattern: ${pattern.patternName}")
+        val results = ArrayList<TraceMatchObject>()
+        transaction {
+            val traces = Operations.innerJoin(Patterns)
+                .join(Traces, JoinType.INNER, additionalConstraint = { Traces.headerId eq Operations.headerId })
+                .slice(
+                    Traces.id,
+                    Traces.traceId,
+                    Traces.version,
+                    Patterns.requestId,
+                    Operations.index,
+                    Operations.path,
+                    Traces.traceUrl,
+                    Operations.operation,
+                    Traces.traceMethod,
+                    Traces.headerId,
+                    Traces.start,
+                    Traces.end,
+                    Traces.duration
+                )
+                .select { Patterns.patternName eq pattern.patternName and (Patterns.resource eq pattern.resource and (Patterns.version eq version)) }
+            traces.forEach {
+                results.add(
+                    TraceMatchObject(
+                        it[Traces.id].value,
+                        it[Traces.traceId],
+                        it[Traces.version],
+                        it[Patterns.requestId],
+                        it[Operations.index],
+                        it[Operations.path],
+                        it[Traces.traceUrl],
+                        it[Operations.operation],
+                        it[Traces.traceMethod],
+                        it[Traces.headerId],
+                        it[Traces.start],
+                        it[Traces.end],
+                        it[Traces.duration]
                     )
                 )
             }
