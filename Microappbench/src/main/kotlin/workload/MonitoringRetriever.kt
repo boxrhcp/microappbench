@@ -4,10 +4,16 @@ import api.ApiRetrieval
 import database.DatabaseOperator
 import json.JsonFileHandler
 import org.slf4j.LoggerFactory
+import utils.ResourceManager
 
-class MonitoringRetriever(baseUrl: String, kialiPort: String, prometheusPort: String, start: Long, end: Long) {
+class MonitoringRetriever(start: Long, end: Long) {
+    private val config = ResourceManager.loadConfigFile()
     private val log = LoggerFactory.getLogger("MonitoringRetriever")!!
-    private val retriever = ApiRetrieval(baseUrl, kialiPort, prometheusPort, start, end)
+    private val retriever = ApiRetrieval(
+        config,
+        start,
+        end
+    )
     private val loader = JsonFileHandler()
     private val db = DatabaseOperator()
 
@@ -43,7 +49,8 @@ class MonitoringRetriever(baseUrl: String, kialiPort: String, prometheusPort: St
                         span.httpStatus,
                         span.httpUrl,
                         span.requestSize,
-                        span.responseSize
+                        span.responseSize,
+                        span.parentId
                     )
                 }
             }
@@ -66,7 +73,12 @@ class MonitoringRetriever(baseUrl: String, kialiPort: String, prometheusPort: St
         }
     }
 
-    fun loadOpenISBTResults(version: String) {
+    fun loadOpenISBTResults() {
+        loadOpenISBTJson(config.get("firstVersion").asString)
+        loadOpenISBTJson(config.get("secondVersion").asString)
+    }
+
+    private fun loadOpenISBTJson(version: String) {
         val jsonData = loader.loadJsonFile(version)
         try {
             for (pattern in jsonData) {

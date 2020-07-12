@@ -9,13 +9,11 @@ val log = LoggerFactory.getLogger("MonitorRetriever")!!
 
 fun main(args: Array<String>) = mainBody {
     ArgParser(args).parseInto(::MonitorRetrieverArguments).run {
-        val retriever = MonitoringRetriever(baseUrl, kialiPort, prometheusPort, start, end)
+        val retriever = MonitoringRetriever(start, end)
         if (clean) retriever.clean()
         retriever.downloadKiali()
         retriever.downloadPrometheus()
-        retriever.loadOpenISBTResults("v1")
-        retriever.loadOpenISBTResults("v2")
-
+        retriever.loadOpenISBTResults()
         log.info("end")
     }
 }

@@ -23,6 +23,7 @@
         <appender-ref ref="FILE"/>
     </root>
 
+    <logger name="AnalyzerCore" level="DEBUG"/>
     <logger name="ApiHandler" level="INFO"/>
     <logger name="org.eclipse.jetty" level="INFO"/>
     <logger name="io.netty" level="INFO"/>

@@ -3,29 +3,31 @@ package api
 import com.google.gson.JsonParser
 import kotlinx.coroutines.runBlocking
 import api.models.*
+import com.google.gson.JsonObject
 import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.collections.ArrayList
 
 class ApiRetrieval(
-    private val baseUrl: String,
-    private val kialiPort: String,
-    private val prometheusPort: String,
+    private val config: JsonObject,
     private val start: Long,
     private val end: Long
 ) {
-
+    private val baseUrl = config.get("baseUrl").asString
     private val apiHandler = ApiHandler()
     private val log = LoggerFactory.getLogger("MonitoringRetrieval")!!
 
 
     fun retrieveKiali(): ArrayList<TraceApiObject> {
         log.info("Retrieving Kiali information")
-        val auth = "admin:admin"
+        val user = config.getAsJsonObject("kiali").get("user").asString
+        val password = config.getAsJsonObject("kiali").get("password").asString
+        val auth = "$user:$password"
+        val kialiPort = config.getAsJsonObject("kiali").get("port").asString
         val parameterList = ArrayList<Pair<String, String>>()
-        parameterList.add(Pair("namespace", "sock-shop"))
-        parameterList.add(Pair("service", "orders"))
-        val queryPath = "/kiali/api/namespaces/{namespace}/services/{service}/traces"
+        parameterList.add(Pair("namespace", config.getAsJsonObject("sut").get("namespace").asString))
+        parameterList.add(Pair("service", config.getAsJsonObject("sut").get("serviceToBenchmark").asString))
+        val queryPath = config.getAsJsonObject("kiali").get("queryPath").asString
         val headerList = ArrayList<Pair<String, String>>()
         headerList.add(Pair("Authorization", "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())))
         val request = ApiRequestObject(
@@ -46,7 +48,7 @@ class ApiRetrieval(
         for (traceElement in results) {
             val trace = traceElement.asJsonObject
             val traceId = trace.get("traceID").asString
-            var version = "v1"
+            var version = config.get("firstVersion").asString
             var traceStart = 0L
             var traceEnd = 0L
             var traceUrl = ""
@@ -86,13 +88,17 @@ class ApiRetrieval(
                         "http.status_code" -> httpStatus = tag.get("value").asInt
                         "http.url" -> httpUrl = tag.get("value").asString
                         "guid:x-request-id" -> headerId = tag.get("value").asString
-                        "node_id" -> { //TODO: IMPROVE IT TO BE OPEN
-                            if (tag.get("value").asString.contains("orders-v2")) {
-                                version = "v2"
+                        "node_id" -> {
+                            if (tag.get("value").asString.contains(
+                                    config.getAsJsonObject("sut").get("serviceSecondVersion").asString
+                                )
+                            ) {
+                                version = config.get("secondVersion").asString
                             }
                         }
                     }
                 }
+                //TODO: specific workaround
                 if (process == "istio-ingressgateway") {
                     traceUrl = httpUrl
                     traceMethod = httpMethod
@@ -119,41 +125,40 @@ class ApiRetrieval(
 
             val duration = traceEnd - traceStart
             log.debug("Adding trace - traceId:$traceId version:$version traceUrl:$traceUrl traceMethod:$traceMethod traceHeaderId:$traceHeaderId traceStart:$traceStart duration:$duration traceEnd:$traceEnd")
-            traces.add(TraceApiObject(traceId, version, traceUrl, traceMethod, traceHeaderId, traceStart, traceEnd, duration, spans))
+            traces.add(
+                TraceApiObject(
+                    traceId,
+                    version,
+                    traceUrl,
+                    traceMethod,
+                    traceHeaderId,
+                    traceStart,
+                    traceEnd,
+                    duration,
+                    spans
+                )
+            )
         }
         return traces
     }
 
     fun retrievePrometheus(): ArrayList<PrometheusApiObject> {
-        //TODO: fin better way to organize this
+        val prometheusPort = config.getAsJsonObject("prometheus").get("port").asString
+        val prometheusQueries = config.getAsJsonObject("prometheus").getAsJsonObject("queries")
         val measurements = ArrayList<Pair<String, String>>()
-        measurements.add(
-            Pair(
-                "cpu",
-                "sum(rate(container_cpu_usage_seconds_total{container_name!=\"POD\",pod_name!=\"\"}[1m])) by (pod_name)"
-            )
-        )
-        measurements.add(
-            Pair(
-                "memory",
-                "sum(rate(container_memory_usage_bytes{container_name!=\"POD\",container_name!=\"\"}[1m])) by (pod_name)"
-            )
-        )
-        measurements.add(Pair("sentBytes", "sum(rate(container_network_transmit_bytes_total[1m])) by (pod_name)"))
-        measurements.add(Pair("receivedBytes", "sum(rate(container_network_receive_bytes_total[1m]))by (pod_name)"))
+        measurements.add(Pair("cpu", prometheusQueries.get("cpuQuery").asString))
+        measurements.add(Pair("memory", prometheusQueries.get("memoryQuery").asString))
+        measurements.add(Pair("sentBytes", prometheusQueries.get("sentBytesQuery").asString))
+        measurements.add(Pair("receivedBytes", prometheusQueries.get("receivedBytesQuery").asString))
         val prometheusData = ArrayList<PrometheusApiObject>()
         for (measurement in measurements) {
             log.info("Retrieving prometheus ${measurement.first} information")
             val parameterList = ArrayList<Pair<String, String>>()
-            parameterList.add(
-                Pair(
-                    "query", measurement.second
-                )
-            )
+            parameterList.add(Pair("query", measurement.second))
             parameterList.add(Pair("start", start.toString()))
             parameterList.add(Pair("end", end.toString()))
-            parameterList.add(Pair("step", "5s"))
-            val queryPath = "/api/v1/query_range"
+            parameterList.add(Pair("step", config.getAsJsonObject("prometheus").get("step").asString))
+            val queryPath = config.getAsJsonObject("prometheus").get("queryPath").asString
             val headerList = ArrayList<Pair<String, String>>()
 
             val request = ApiRequestObject(

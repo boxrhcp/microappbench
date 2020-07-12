@@ -10,8 +10,7 @@ val log = LoggerFactory.getLogger("BenchmarkTool")!!
 
 fun main(args: Array<String>) = mainBody {
     ArgParser(args).parseInto(::BenchmarkRunnerArguments).run {
-
         val generator = WorkloadGenerator()
-        generator.executeBenchmark(ipToBenchmark, firstVersion, secondVersion, build)
+        generator.executeBenchmark(ipToBenchmark, build)
     }
 }
