@@ -2,6 +2,7 @@
   "differenceThreshold": 600,
   "firstVersion": "v1",
   "secondVersion": "v2",
+  "benchmarkResultsDir": "scripts/run_openISBT/results",
   "baseUrl": "http://localhost",
   "sut": {
     "namespace": "sock-shop",

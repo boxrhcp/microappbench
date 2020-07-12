@@ -2,7 +2,7 @@
 address="http://localhost:80"
 version="v1"
 worker_port="8000"
-service="order"
+service="orders"
 
 for arg in "$@"
 do

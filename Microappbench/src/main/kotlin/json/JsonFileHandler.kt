@@ -9,11 +9,10 @@ import java.io.File
 class JsonFileHandler {
     private val log = LoggerFactory.getLogger("JsonFileHandler")!!
 
-    fun loadJsonFile(version: String): ArrayList<PatternJson> {
+    fun loadJsonFile(service: String, version: String, dir: String): ArrayList<PatternJson> {
         val results = ArrayList<PatternJson>()
-        //TODO: manage better file name
         val json =
-            JsonParser().parse(File("scripts/run_openISBT/results/results-order-$version.json").readText(Charsets.UTF_8)).asJsonArray
+            JsonParser().parse(File("$dir/results-$service-$version.json").readText(Charsets.UTF_8)).asJsonArray
         for (patternElem in json) {
             val pattern = patternElem.asJsonObject
             val operations = ArrayList<OperationJson>()

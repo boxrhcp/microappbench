@@ -79,7 +79,11 @@ class MonitoringRetriever(start: Long, end: Long) {
     }
 
     private fun loadOpenISBTJson(version: String) {
-        val jsonData = loader.loadJsonFile(version)
+        val jsonData = loader.loadJsonFile(
+            config.getAsJsonObject("sut").get("serviceToBenchmark").asString,
+            version,
+            config.get("benchmarkResultsDir").asString
+        )
         try {
             for (pattern in jsonData) {
                 val patternId = db.insertPattern(

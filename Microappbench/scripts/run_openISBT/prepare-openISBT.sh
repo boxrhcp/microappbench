@@ -2,7 +2,7 @@
 flag_build=0
 address="http://localhost:80"
 version="v1"
-service="order"
+service="orders"
 
 for arg in "$@"
 do
