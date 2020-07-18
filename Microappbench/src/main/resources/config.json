@@ -1,5 +1,5 @@
 {
-  "differenceThreshold": 600,
+  "differenceThreshold": 0.01,
   "firstVersion": "v1",
   "secondVersion": "v2",
   "benchmarkResultsDir": "scripts/run_openISBT/results",
@@ -24,6 +24,6 @@
       "sentBytesQuery": "sum(rate(container_network_transmit_bytes_total[1m])) by (pod_name)",
       "receivedBytesQuery": "sum(rate(container_network_receive_bytes_total[1m]))by (pod_name)"
     },
-    "step": "5s"
+    "step": "1s"
   }
 }

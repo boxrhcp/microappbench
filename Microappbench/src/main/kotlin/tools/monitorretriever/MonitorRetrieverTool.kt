@@ -12,8 +12,9 @@ fun main(args: Array<String>) = mainBody {
         val retriever = MonitoringRetriever(start, end)
         if (clean) retriever.clean()
         retriever.downloadKiali()
-        retriever.downloadPrometheus()
+        //retriever.downloadPrometheus()
         retriever.loadOpenISBTResults()
         log.info("end")
     }
+    log.info("end two")
 }

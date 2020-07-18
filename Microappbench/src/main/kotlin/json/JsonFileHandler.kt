@@ -11,6 +11,7 @@ class JsonFileHandler {
 
     fun loadJsonFile(service: String, version: String, dir: String): ArrayList<PatternJson> {
         val results = ArrayList<PatternJson>()
+        log.info("Reading file: $dir/results-$service-$version.json")
         val json =
             JsonParser().parse(File("$dir/results-$service-$version.json").readText(Charsets.UTF_8)).asJsonArray
         for (patternElem in json) {

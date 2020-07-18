@@ -6,13 +6,11 @@ import json.JsonFileHandler
 import org.slf4j.LoggerFactory
 import utils.ResourceManager
 
-class MonitoringRetriever(start: Long, end: Long) {
+class MonitoringRetriever(val start: Long, val end: Long) {
     private val config = ResourceManager.loadConfigFile()
     private val log = LoggerFactory.getLogger("MonitoringRetriever")!!
     private val retriever = ApiRetrieval(
-        config,
-        start,
-        end
+        config
     )
     private val loader = JsonFileHandler()
     private val db = DatabaseOperator()
@@ -61,7 +59,7 @@ class MonitoringRetriever(start: Long, end: Long) {
     }
 
     fun downloadPrometheus() {
-        val prometheusData = retriever.retrievePrometheus()
+        val prometheusData = retriever.retrievePrometheus(start, end)
         try {
             for (data in prometheusData) {
                 for (value in data.values) {

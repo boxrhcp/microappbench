@@ -6,12 +6,12 @@ import api.models.*
 import com.google.gson.JsonObject
 import org.slf4j.LoggerFactory
 import java.util.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlin.collections.ArrayList
 
 class ApiRetrieval(
-    private val config: JsonObject,
-    private val start: Long,
-    private val end: Long
+    private val config: JsonObject
 ) {
     private val baseUrl = config.get("baseUrl").asString
     private val apiHandler = ApiHandler()
@@ -40,9 +40,9 @@ class ApiRetrieval(
             response = "",
             status = 0
         )
-        runBlocking {
-            apiHandler.makeApiRequest(request)
-        }
+
+        apiHandler.makeApiRequest(request)
+
         val results = JsonParser().parse(request.response).asJsonObject.getAsJsonArray("data")
         val traces = ArrayList<TraceApiObject>()
         for (traceElement in results) {
@@ -142,7 +142,7 @@ class ApiRetrieval(
         return traces
     }
 
-    fun retrievePrometheus(): ArrayList<PrometheusApiObject> {
+    fun retrievePrometheus(start: Long, end: Long): ArrayList<PrometheusApiObject> {
         val prometheusPort = config.getAsJsonObject("prometheus").get("port").asString
         val prometheusQueries = config.getAsJsonObject("prometheus").getAsJsonObject("queries")
         val measurements = ArrayList<Pair<String, String>>()
@@ -172,9 +172,7 @@ class ApiRetrieval(
                 status = 0
             )
 
-            runBlocking {
-                apiHandler.makeApiRequest(request)
-            }
+            apiHandler.makeApiRequest(request)
 
             val results =
                 JsonParser().parse(request.response).asJsonObject.getAsJsonObject("data").getAsJsonArray("result")
@@ -212,6 +210,5 @@ class ApiRetrieval(
         }
         return prometheusData
     }
-
 
 }

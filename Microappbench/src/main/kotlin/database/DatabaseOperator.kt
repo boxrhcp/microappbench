@@ -1,7 +1,7 @@
 package database
 
 import database.models.PatternAggObject
-import database.models.TraceAggObject
+import database.models.SpanObject
 import database.models.TraceMatchObject
 import database.tables.*
 import org.jetbrains.exposed.sql.*
@@ -15,21 +15,21 @@ class DatabaseOperator {
     private val db = Database.db
 
     fun createTables() {
-        log.info("Creating db and tables")
+        log.debug("Creating db and tables")
         transaction {
             SchemaUtils.create(Patterns, Operations, PrometheusDatas, Traces, Spans)
             commit()
         }
-        log.info("Db creation successful")
+        log.debug("Db creation successful")
     }
 
     fun dropTables() {
-        log.info("Dropping db and tables")
+        log.debug("Dropping db and tables")
         transaction {
             SchemaUtils.drop(Patterns, Operations, PrometheusDatas, Spans, Traces)
             commit()
         }
-        log.info("Drop db successful")
+        log.debug("Drop db successful")
     }
 
     fun insertPattern(
@@ -42,7 +42,7 @@ class DatabaseOperator {
         _end: Long,
         _duration: Long
     ): Int {
-        log.info("inserting pattern")
+        log.debug("inserting pattern")
         var result = 0
         transaction {
             val id = Patterns.insertAndGetId {
@@ -73,7 +73,7 @@ class DatabaseOperator {
         _end: Long,
         _duration: Long
     ): Int {
-        log.info("inserting operation")
+        log.debug("inserting operation")
         var result = 0
         transaction {
             val id = Operations.insertAndGetId {
@@ -104,7 +104,7 @@ class DatabaseOperator {
         _end: Long,
         _duration: Long
     ): Int {
-        log.info("inserting trace")
+        log.debug("inserting trace")
         var result = 0
         transaction {
             val id = Traces.insertAndGetId {
@@ -138,7 +138,7 @@ class DatabaseOperator {
         _responseSize: Int,
         _parentId: String
     ): Int {
-        log.info("inserting Span")
+        log.debug("inserting Span")
         var result = 0
         transaction {
             val id = Spans.insertAndGetId {
@@ -168,7 +168,7 @@ class DatabaseOperator {
         _time: Long,
         _value: BigDecimal
     ): Int {
-        log.info("Inserting prometheus data")
+        log.debug("Inserting prometheus data")
         var result = 0
         transaction {
             val id = PrometheusDatas.insertAndGetId {
@@ -183,21 +183,8 @@ class DatabaseOperator {
         return result
     }
 
-    fun aggregateTraces(): ArrayList<TraceAggObject> {
-        val results = ArrayList<TraceAggObject>()
-        transaction {
-            val query = Traces.slice(Traces.traceMethod, Traces.version, Traces.duration.avg()).selectAll()
-                .groupBy(Traces.traceMethod, Traces.version)
-
-            query.forEach {
-                results.add(TraceAggObject(it[Traces.traceMethod], it[Traces.version], it[Traces.duration.avg()]!!))
-            }
-        }
-        return results
-    }
-
-    fun aggregatePatterns(version: String): ArrayList<PatternAggObject> {
-        log.info("Querying aggregated patterns")
+    fun aggregatePatternsByVersion(version: String): ArrayList<PatternAggObject> {
+        log.debug("Querying aggregated patterns")
         val results = ArrayList<PatternAggObject>()
         transaction {
             val query =
@@ -219,7 +206,7 @@ class DatabaseOperator {
     }
 
     fun getTracesMatchedWithPattern(pattern: PatternAggObject, version: String): ArrayList<TraceMatchObject> {
-        log.info("Querying traces from given pattern - resource: ${pattern.resource} pattern: ${pattern.patternName}")
+        log.debug("Querying traces from given pattern - resource: ${pattern.resource} pattern: ${pattern.patternName} version: $version")
         val results = ArrayList<TraceMatchObject>()
         transaction {
             val traces = Operations.innerJoin(Patterns)
@@ -241,6 +228,7 @@ class DatabaseOperator {
                 )
                 .select { Patterns.patternName eq pattern.patternName and (Patterns.resource eq pattern.resource and (Patterns.version eq version)) }
             traces.forEach {
+                log.debug("trace id: ${it[Traces.id].value}")
                 results.add(
                     TraceMatchObject(
                         it[Traces.id].value,
@@ -256,6 +244,50 @@ class DatabaseOperator {
                         it[Traces.start],
                         it[Traces.end],
                         it[Traces.duration]
+                    )
+                )
+            }
+        }
+        return results
+    }
+
+    fun getSpansByTraceId(trace: TraceMatchObject): ArrayList<SpanObject> {
+        val results = ArrayList<SpanObject>()
+        transaction {
+            val spans = Spans.innerJoin(Traces).slice(
+                Spans.spanId,
+                Traces.traceId,
+                Spans.version,
+                Spans.start,
+                Spans.end,
+                Spans.duration,
+                Spans.process,
+                Spans.httpMethod,
+                Spans.httpUrl,
+                Spans.httpStatusCode,
+                Spans.requestSize,
+                Spans.responseSize,
+                Spans.parentId
+            ).select { Spans.traceId eq trace.id }
+
+            spans.forEach {
+                results.add(
+                    SpanObject(
+                        it[Spans.spanId],
+                        it[Traces.traceId],
+                        it[Spans.version],
+                        trace.requestId,
+                        trace.index,
+                        it[Spans.start],
+                        it[Spans.end],
+                        it[Spans.duration],
+                        it[Spans.process],
+                        it[Spans.httpMethod],
+                        it[Spans.httpUrl],
+                        it[Spans.httpStatusCode],
+                        it[Spans.requestSize],
+                        it[Spans.responseSize],
+                        it[Spans.parentId]
                     )
                 )
             }

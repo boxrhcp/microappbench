@@ -1,7 +1,5 @@
 package database.models
 
-import java.math.BigDecimal
-
 data class TraceMatchObject(
     val id: Int,
     val traceId: String,

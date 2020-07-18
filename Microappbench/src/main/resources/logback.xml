@@ -23,6 +23,8 @@
         <appender-ref ref="FILE"/>
     </root>
 
+    <logger name="JsonFileHandler" level="INFO"/>
+    <logger name="DatabaseOperator" level="INFO"/>
     <logger name="AnalyzerCore" level="DEBUG"/>
     <logger name="ApiHandler" level="INFO"/>
     <logger name="org.eclipse.jetty" level="INFO"/>

@@ -9,78 +9,82 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.content.TextContent
 import api.models.ApiRequestObject
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 
 class ApiHandler {
     private val log = LoggerFactory.getLogger("ApiHandler")!!
 
-    suspend fun makeApiRequest(apiRequest: ApiRequestObject) {
+    fun makeApiRequest(apiRequest: ApiRequestObject) {
+
         val maxContentLen = 200
         val client = HttpClient()
         var url = apiRequest.path
         url = buildUrl(url, apiRequest.parameter)
         log.debug("URL is $url")
-        with(apiRequest.method) {
-            log.info("Sending ${apiRequest.method} to $url, body: ${apiRequest.body}")
-            when {
-                equals("POST") -> {
-                    try {
-                        val response = client.post<HttpResponse>(url) {
-                            method = HttpMethod.Post
-                            body =
-                                TextContent(apiRequest.body.toString(), contentType = ContentType.Application.Json)
+        try {
+            with(apiRequest.method) {
+                log.info("Sending ${apiRequest.method} to $url, body: ${apiRequest.body}")
+                when {
+                    equals("POST") -> {
+                        runBlocking {
+                            val response = client.post<HttpResponse>(url) {
+                                method = HttpMethod.Post
+                                body =
+                                    TextContent(apiRequest.body.toString(), contentType = ContentType.Application.Json)
 
-                            if (apiRequest.headers.isNotEmpty()) {
-                                for (h in apiRequest.headers) {
-                                    log.debug("Add header: ${h.first}, ${h.second}")
-                                    headers.append(h.first, h.second)
+                                if (apiRequest.headers.isNotEmpty()) {
+                                    for (h in apiRequest.headers) {
+                                        log.debug("Add header: ${h.first}, ${h.second}")
+                                        headers.append(h.first, h.second)
+                                    }
                                 }
+                                headers.append("Accept", "application/json")
                             }
-                            headers.append("Accept", "application/json")
-                        }
 
-                        val responseText = response.readText()
-                        var logtext = responseText
-                        if (logtext.length > maxContentLen) {
-                            logtext = logtext.substring(0, maxContentLen - 2) + "..."
+                            val responseText = response.readText()
+                            var logtext = responseText
+                            if (logtext.length > maxContentLen) {
+                                logtext = logtext.substring(0, maxContentLen - 2) + "..."
+                            }
+                            log.info("Responded (${response.status.value}) $logtext")
+                            apiRequest.response = responseText
+                            apiRequest.status = response.status.value
+                            response.close()
                         }
-                        log.info("Responded (${response.status.value}) $logtext")
-                        apiRequest.response = responseText
-                        apiRequest.status = response.status.value
-                        client.close()
-                    }catch (e: Exception){
-                        log.error("Error when calling API $url with method ${apiRequest.method}")
                     }
-
-                }
-                equals("GET") -> {
-                    try {
-                        val response = client.get<HttpResponse>(url) {
-                            method = HttpMethod.Get
-                            body = TextContent(apiRequest.body.toString(), contentType = ContentType.Application.Json)
-                            if (apiRequest.headers.isNotEmpty()) {
-                                for (h in apiRequest.headers) {
-                                    log.debug("Add header: ${h.first}, ${h.second}")
-                                    headers.append(h.first, h.second)
+                    equals("GET") -> {
+                        runBlocking {
+                            val response = client.get<HttpResponse>(url) {
+                                method = HttpMethod.Get
+                                body =
+                                    TextContent(apiRequest.body.toString(), contentType = ContentType.Application.Json)
+                                if (apiRequest.headers.isNotEmpty()) {
+                                    for (h in apiRequest.headers) {
+                                        log.debug("Add header: ${h.first}, ${h.second}")
+                                        headers.append(h.first, h.second)
+                                    }
                                 }
-                            }
-                            headers.append("Accept", "application/json")
+                                headers.append("Accept", "application/json")
 
+                            }
+                            val responseText = response.readText()
+                            var logtext = responseText
+                            if (logtext.length > maxContentLen) {
+                                logtext = logtext.substring(0, maxContentLen - 2) + "..."
+                            }
+                            log.info("Responded (${response.status.value}) $logtext")
+                            apiRequest.response = responseText
+                            apiRequest.status = response.status.value
+                            response.close()
                         }
-                        val responseText = response.readText()
-                        var logtext = responseText
-                        if (logtext.length > maxContentLen) {
-                            logtext = logtext.substring(0, maxContentLen - 2) + "..."
-                        }
-                        log.info("Responded (${response.status.value}) $logtext")
-                        apiRequest.response = responseText
-                        apiRequest.status = response.status.value
-                        client.close()
-                    }catch(e: Exception){
-                        log.error("Error when calling API $url with method ${apiRequest.method}")
                     }
                 }
             }
+        } catch (e: Exception) {
+            log.error("Error processing API request: ${e.message}")
+        } finally {
+            client.close()
         }
     }
 
