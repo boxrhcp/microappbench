@@ -1,13 +1,11 @@
 package api
 
 import com.google.gson.JsonParser
-import kotlinx.coroutines.runBlocking
 import api.models.*
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import org.slf4j.LoggerFactory
 import java.util.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import kotlin.collections.ArrayList
 
 class ApiRetrieval(
@@ -15,11 +13,11 @@ class ApiRetrieval(
 ) {
     private val baseUrl = config.get("baseUrl").asString
     private val apiHandler = ApiHandler()
-    private val log = LoggerFactory.getLogger("MonitoringRetrieval")!!
+    private val log = LoggerFactory.getLogger("ApiRetrieval")!!
 
 
     fun retrieveKiali(): ArrayList<TraceApiObject> {
-        log.info("Retrieving Kiali information")
+        log.debug("Retrieving Kiali information")
         val user = config.getAsJsonObject("kiali").get("user").asString
         val password = config.getAsJsonObject("kiali").get("password").asString
         val auth = "$user:$password"
@@ -27,6 +25,7 @@ class ApiRetrieval(
         val parameterList = ArrayList<Pair<String, String>>()
         parameterList.add(Pair("namespace", config.getAsJsonObject("sut").get("namespace").asString))
         parameterList.add(Pair("service", config.getAsJsonObject("sut").get("serviceToBenchmark").asString))
+        parameterList.add(Pair("limit", "1000"))
         val queryPath = config.getAsJsonObject("kiali").get("queryPath").asString
         val headerList = ArrayList<Pair<String, String>>()
         headerList.add(Pair("Authorization", "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())))
@@ -42,6 +41,7 @@ class ApiRetrieval(
         )
 
         apiHandler.makeApiRequest(request)
+        //log.debug(request.response)
 
         val results = JsonParser().parse(request.response).asJsonObject.getAsJsonArray("data")
         val traces = ArrayList<TraceApiObject>()
@@ -73,6 +73,11 @@ class ApiRetrieval(
                 }
                 val process = trace.getAsJsonObject("processes").getAsJsonObject(span.get("processID").asString)
                     .get("serviceName").asString
+                val warningObject = span.get("warnings")
+                var warnings = JsonArray()
+                if (!warningObject.isJsonNull) {
+                    warnings = warningObject.asJsonArray
+                }
                 var requestSize = 0
                 var responseSize = 0
                 var httpMethod = ""
@@ -118,11 +123,12 @@ class ApiRetrieval(
                         httpStatus,
                         responseSize,
                         requestSize,
-                        process
+                        process,
+                        warnings
                     )
                 )
             }
-
+            fixInvalidParentSpan(spans)
             val duration = traceEnd - traceStart
             log.debug("Adding trace - traceId:$traceId version:$version traceUrl:$traceUrl traceMethod:$traceMethod traceHeaderId:$traceHeaderId traceStart:$traceStart duration:$duration traceEnd:$traceEnd")
             traces.add(
@@ -139,6 +145,8 @@ class ApiRetrieval(
                 )
             )
         }
+
+
         return traces
     }
 
@@ -152,7 +160,7 @@ class ApiRetrieval(
         measurements.add(Pair("receivedBytes", prometheusQueries.get("receivedBytesQuery").asString))
         val prometheusData = ArrayList<PrometheusApiObject>()
         for (measurement in measurements) {
-            log.info("Retrieving prometheus ${measurement.first} information")
+            log.debug("Retrieving prometheus ${measurement.first} information")
             val parameterList = ArrayList<Pair<String, String>>()
             parameterList.add(Pair("query", measurement.second))
             parameterList.add(Pair("start", start.toString()))
@@ -209,6 +217,30 @@ class ApiRetrieval(
             }
         }
         return prometheusData
+    }
+
+    //TODO: WORKAROUND FIX FOR PARENT SPANS ERROR
+    private fun fixInvalidParentSpan(spans: ArrayList<SpanApiObject>) {
+        val processName =
+            config.getAsJsonObject("sut").get("serviceToBenchmark").asString + "." + config.getAsJsonObject("sut")
+                .get("namespace").asString
+        //log.info("process name: $processName")
+        val find = spans.stream().filter {
+            it.process == processName && it.warnings.size() < 1
+        }.findAny()
+
+        if (find.isPresent) {
+            val parent = find.get()
+            //log.info("parent is ${parent.process}")
+            for (span in spans) {
+                if (span.warnings.size() > 0) {
+                    if (span.warnings[0].asString.contains("invalid parent span")) {
+                        span.parentId = parent.spanId
+                        //log.info("child ${span.process}")
+                    }
+                }
+            }
+        }
     }
 
 }

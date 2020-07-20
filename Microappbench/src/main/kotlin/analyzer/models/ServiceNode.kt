@@ -9,8 +9,9 @@ class ServiceNode(val service: String) {
     private val metrics = HashMap<String, ArrayList<PrometheusApiObject>>()
 
     fun getPrometheusData(start: Long, end: Long) {
-        val retriever = ApiRetrieval( ResourceManager.loadConfigFile())
+        val retriever = ApiRetrieval(ResourceManager.loadConfigFile())
         val metricsList = retriever.retrievePrometheus(TimeUnit.MILLISECONDS.toSeconds(start), TimeUnit.MILLISECONDS.toSeconds(end))
+        //TODO: filter services
         for (metric in metricsList){
             if(metrics.containsKey(metric.type)){
                 metrics[metric.type]!!.add(metric)

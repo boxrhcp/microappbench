@@ -24,7 +24,7 @@ class ApiHandler {
         log.debug("URL is $url")
         try {
             with(apiRequest.method) {
-                log.info("Sending ${apiRequest.method} to $url, body: ${apiRequest.body}")
+                log.debug("Sending ${apiRequest.method} to $url, body: ${apiRequest.body}")
                 when {
                     equals("POST") -> {
                         runBlocking {
@@ -47,7 +47,7 @@ class ApiHandler {
                             if (logtext.length > maxContentLen) {
                                 logtext = logtext.substring(0, maxContentLen - 2) + "..."
                             }
-                            log.info("Responded (${response.status.value}) $logtext")
+                            log.debug("Responded (${response.status.value}) $logtext")
                             apiRequest.response = responseText
                             apiRequest.status = response.status.value
                             response.close()
@@ -73,7 +73,7 @@ class ApiHandler {
                             if (logtext.length > maxContentLen) {
                                 logtext = logtext.substring(0, maxContentLen - 2) + "..."
                             }
-                            log.info("Responded (${response.status.value}) $logtext")
+                            log.debug("Responded (${response.status.value}) $logtext")
                             apiRequest.response = responseText
                             apiRequest.status = response.status.value
                             response.close()

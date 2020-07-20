@@ -47,10 +47,10 @@ class AnalyzerCore(
             val firstTraces = db.getTracesMatchedWithPattern(drop, firstVersion)
             val secondTraces = db.getTracesMatchedWithPattern(drop, secondVersion)
             for (trace in firstTraces) {
-                log.debug("Trying to match version traces for ${trace.tracePath} with ${trace.traceMethod} [${trace.requestId}]")
+                //log.debug("Trying to match version traces for ${trace.tracePath} with ${trace.traceMethod} [${trace.requestId}]")
                 //TODO: Watch out, is the match really working?
                 val find = secondTraces.stream()
-                    .filter { it.requestId == trace.requestId }
+                    .filter { it.requestId == trace.requestId && it.index == it.index && it.tracePath == trace.tracePath && it.traceMethod == trace.traceMethod }
                     .findAny()
                 if (find.isPresent) {
                     val mirror = find.get()
@@ -65,17 +65,18 @@ class AnalyzerCore(
         return results
     }
 
-    fun getSpansTree(trace: TraceMatchObject): SpanNode?{
+    fun getSpansTree(trace: TraceMatchObject): SpanNode? {
         val spans = db.getSpansByTraceId(trace)
         val find = spans.stream().filter { it.parentId == "" }.findAny()
         var rootEdge: SpanNode? = null
         if (find.isPresent) {
             rootEdge = createSpanTree(find.get(), spans)
-            readSpanTree(rootEdge)
         }
         /*for (span in spans) {
             log.debug("Span ${span.spanId} from trace ${span.traceId} child of ${span.parentId}")
         }*/
+        if (rootEdge != null) readSpanTree(rootEdge)
+        log.info("__________")
         return rootEdge
     }
 
