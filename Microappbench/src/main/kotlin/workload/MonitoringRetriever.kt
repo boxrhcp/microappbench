@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory
 import utils.ResourceManager
 
 class MonitoringRetriever(val start: Long, val end: Long) {
-    private val config = ResourceManager.loadConfigFile()
+    private val config = ResourceManager.getConfigFile()
     private val log = LoggerFactory.getLogger("MonitoringRetriever")!!
     private val retriever = ApiRetrieval(
         config

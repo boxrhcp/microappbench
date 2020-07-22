@@ -7,7 +7,7 @@ import utils.ResourceManager
 
 class WorkloadGenerator() {
     private val log = LoggerFactory.getLogger("WorkloadGenerator")!!
-    private val config = ResourceManager.loadConfigFile()
+    private val config = ResourceManager.getConfigFile()
 
     fun executeBenchmark(ipToBenchmark: String, build: Boolean) {
         val firstVersion = config.get("firstVersion").asString

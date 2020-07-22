@@ -25,7 +25,7 @@ class ApiRetrieval(
         val parameterList = ArrayList<Pair<String, String>>()
         parameterList.add(Pair("namespace", config.getAsJsonObject("sut").get("namespace").asString))
         parameterList.add(Pair("service", config.getAsJsonObject("sut").get("serviceToBenchmark").asString))
-        parameterList.add(Pair("limit", "1000"))
+        parameterList.add(Pair("limit", "10000"))
         val queryPath = config.getAsJsonObject("kiali").get("queryPath").asString
         val headerList = ArrayList<Pair<String, String>>()
         headerList.add(Pair("Authorization", "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())))
@@ -154,10 +154,10 @@ class ApiRetrieval(
         val prometheusPort = config.getAsJsonObject("prometheus").get("port").asString
         val prometheusQueries = config.getAsJsonObject("prometheus").getAsJsonObject("queries")
         val measurements = ArrayList<Pair<String, String>>()
-        measurements.add(Pair("cpu", prometheusQueries.get("cpuQuery").asString))
-        measurements.add(Pair("memory", prometheusQueries.get("memoryQuery").asString))
-        measurements.add(Pair("sentBytes", prometheusQueries.get("sentBytesQuery").asString))
-        measurements.add(Pair("receivedBytes", prometheusQueries.get("receivedBytesQuery").asString))
+        measurements.add(Pair(MetricType.CPU.typeName, prometheusQueries.get("cpuQuery").asString))
+        measurements.add(Pair(MetricType.MEMORY.typeName, prometheusQueries.get("memoryQuery").asString))
+        measurements.add(Pair(MetricType.SENT_BYTES.typeName, prometheusQueries.get("sentBytesQuery").asString))
+        measurements.add(Pair(MetricType.RECEIVED_BYTES.typeName, prometheusQueries.get("receivedBytesQuery").asString))
         val prometheusData = ArrayList<PrometheusApiObject>()
         for (measurement in measurements) {
             log.debug("Retrieving prometheus ${measurement.first} information")

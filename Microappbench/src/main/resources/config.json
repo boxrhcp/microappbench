@@ -1,5 +1,4 @@
 {
-  "differenceThreshold": 0.01,
   "firstVersion": "v1",
   "secondVersion": "v2",
   "benchmarkResultsDir": "scripts/run_openISBT/results",
@@ -7,6 +6,7 @@
   "sut": {
     "namespace": "sock-shop",
     "serviceToBenchmark": "orders",
+    "serviceFirstVersion": "orders-v1",
     "serviceSecondVersion": "orders-v2"
   },
   "kiali": {
@@ -17,6 +17,7 @@
   },
   "prometheus": {
     "queryPath": "/api/v1/query_range",
+    "differenceThreshold": 0.1,
     "port": "9090",
     "queries": {
       "cpuQuery": "sum(rate(container_cpu_usage_seconds_total{container_name!=\"POD\",pod_name!=\"\"}[1m])) by (pod_name)",
@@ -25,5 +26,14 @@
       "receivedBytesQuery": "sum(rate(container_network_receive_bytes_total[1m]))by (pod_name)"
     },
     "step": "1s"
+  },
+  "analyzer": {
+    "execTimeThreshold": 0.1,
+    "cpuUsageThreshold": 0.1,
+    "memoryUsageThreshold": 0.1,
+    "receivedBytesThreshold": 0.1,
+    "sentBytesThreshold": 0.1,
+    "httpRequestSizeThreshold": 0.1,
+    "httpResponseSizeThreshold": 0.1
   }
 }
