@@ -29,11 +29,11 @@
   },
   "analyzer": {
     "execTimeThreshold": 0.1,
-    "cpuUsageThreshold": 0.1,
-    "memoryUsageThreshold": 0.1,
-    "receivedBytesThreshold": 0.1,
-    "sentBytesThreshold": 0.1,
-    "httpRequestSizeThreshold": 0.1,
-    "httpResponseSizeThreshold": 0.1
+    "cpuUsageThreshold": 0.3,
+    "memoryUsageThreshold": 0.3,
+    "receivedBytesThreshold": 0.2,
+    "sentBytesThreshold": 0.2,
+    "httpRequestSizeThreshold": 0.3,
+    "httpResponseSizeThreshold": 0.3
   }
 }

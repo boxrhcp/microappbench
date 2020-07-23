@@ -1,6 +1,7 @@
 package workload
 
 import analyzer.AnalyzerCore
+import analyzer.models.report.TraceIssueReport
 import org.slf4j.LoggerFactory
 import utils.ResourceManager
 
@@ -19,11 +20,12 @@ class Analyzer {
         config.getAsJsonObject("analyzer").get("httpResponseSizeThreshold")
         )
 
-    fun execAnalysis() {
+    fun execAnalysis(): ArrayList<TraceIssueReport> {
         log.info("Starting analysis")
         val drops = core.findPerformanceDrop()
         val traces = core.matchPatternAndTraces(drops)
         //val spanTrees = ArrayList<Pair<SpanNode, SpanNode>>()
+        val traceReports = ArrayList<TraceIssueReport>()
         for (trace in traces) {
             core.clearIssues()
             val firstRoot = core.getSpansTree(trace.first)
@@ -31,13 +33,11 @@ class Analyzer {
             if (firstRoot != null && secondRoot != null) {
                 //spanTrees.add()
                 core.compareSpans(Pair(firstRoot, secondRoot))
-                //core.tagIssues()
+                traceReports.add(core.generateReport(trace))
             } else {
                 log.error("Spans versions could not be retrieved for trace: ${trace.first.id} pattern ${trace.first.requestId} and index ${trace.first.index}")
             }
         }
-        for (issue in core.getIssues()) {
-            log.info("${issue.tag} issue found in traceId ${issue.spanPair.second.span.traceId} compared with ${issue.spanPair.first.span.traceId}: ${issue.message}")
-        }
+        return traceReports
     }
 }

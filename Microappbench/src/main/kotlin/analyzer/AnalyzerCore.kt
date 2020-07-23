@@ -4,6 +4,10 @@ import analyzer.models.Issue
 import analyzer.models.IssueFlag
 import analyzer.models.ServiceNode
 import analyzer.models.SpanNode
+import analyzer.models.report.SpanIssueReport
+import analyzer.models.report.SpanReport
+import analyzer.models.report.TraceIssueReport
+import analyzer.models.report.TraceReport
 import api.models.MetricType
 import com.google.gson.JsonElement
 import database.DatabaseOperator
@@ -109,6 +113,7 @@ class AnalyzerCore(
         val issue = Issue(spanPair)
         //TODO compare urls?
         if (ogSpan.callee.service == newSpan.callee.service && ogSpan.caller.service == newSpan.caller.service && ogSpan.span.httpMethod == newSpan.span.httpMethod) {
+            issue.flags[IssueFlag.CALL_MISMATCH.flagName] = false
             // check caller and callee metric differences
             for (type in MetricType.values()) {
                 checkServiceNodes(issue, ogSpan.caller, newSpan.caller, type)
@@ -126,6 +131,15 @@ class AnalyzerCore(
             issue.flags[IssueFlag.RES_SIZE.flagName] =
                 (1 * httpResponseSizeThreshold.asDouble) * ogSpan.span.responseSize < newSpan.span.responseSize
 
+            //check if http status code is different and its not success
+            issue.flags[IssueFlag.CALL_ERROR.flagName] =
+                (ogSpan.span.httpStatusCode != newSpan.span.httpStatusCode && newSpan.span.httpStatusCode != 200
+                        && newSpan.span.httpStatusCode != 201 && newSpan.span.httpStatusCode != 202
+                        && newSpan.span.httpStatusCode != 203 && newSpan.span.httpStatusCode != 204
+                        && newSpan.span.httpStatusCode != 205 && newSpan.span.httpStatusCode != 206
+                        && newSpan.span.httpStatusCode != 207 && newSpan.span.httpStatusCode != 208
+                        && newSpan.span.httpStatusCode != 226)
+
             //check if there is a call mismatch
             issue.flags[IssueFlag.CHILD_MISMATCH.flagName] = ogSpan.children.size != newSpan.children.size
 
@@ -142,12 +156,13 @@ class AnalyzerCore(
             if (issue.flags.isNotEmpty()) issues.add(issue)
 
         } else {
-            issue.flags[IssueFlag.CALL_MISMATCH.flagName] = true
-            issue.tag = "call"
-            issue.message =
-                "The call differs in caller, callee or the method\n Original call: Caller - ${ogSpan.caller.service}" +
-                        ", Callee - ${ogSpan.callee.service}, method: ${ogSpan.span.httpMethod}\n" +
-                        " New call: Caller - ${ogSpan.caller.service}, Callee - ${ogSpan.callee.service}, method: ${ogSpan.span.httpMethod}"
+            for (flag in IssueFlag.values()) {
+                if (flag == IssueFlag.CALL_MISMATCH) {
+                    issue.flags[IssueFlag.CALL_MISMATCH.flagName] = true
+                } else {
+                    issue.flags[flag.flagName] = false
+                }
+            }
             issues.add(issue)
         }
     }
@@ -179,13 +194,102 @@ class AnalyzerCore(
         }
     }
 
-    fun tagIssues() {
-        for (issue in issues) {
-            log.info("Issue with ${issue.spanPair.first.caller.service} and ${issue.spanPair.first.callee.service} ")
+    fun generateReport(trace: Pair<TraceMatchObject, TraceMatchObject>): TraceIssueReport {
+        val ogTrace = trace.first
+        val newTrace = trace.second
 
-            for (key in issue.flags.keys)
-                log.info("KEY $key IS ${issue.flags[key]}")
+        val ogId = ogTrace.traceId
+        val newId = newTrace.traceId
+        val ogVersion = ogTrace.version
+        val newVersion = newTrace.version
+        val path = ogTrace.tracePath
+        val method = ogTrace.traceMethod
+        val operation = ogTrace.operation
+        val requestId = ogTrace.requestId
+        val index = ogTrace.index
+        val ogDuration = ogTrace.duration
+        val newDuration = newTrace.duration
+        val traceDifference = newDuration.toDouble() / ogDuration.toDouble()
+        val spanIssues = ArrayList<SpanIssueReport>()
+        for (issue in issues) {
+            val ogSpan = issue.spanPair.first
+            val newSpan = issue.spanPair.second
+            val ogSpanId = ogSpan.span.spanId
+            val newSpanId = newSpan.span.spanId
+            val ogUrl = ogSpan.span.httpUrl
+            val newUrl = newSpan.span.httpUrl
+            val ogMethod = ogSpan.span.httpMethod
+            val newMethod = newSpan.span.httpMethod
+            val ogSpanDuration = ogSpan.span.duration
+            val newSpanDuration = newSpan.span.duration
+            val spanDifference = newSpanDuration.toDouble() / ogSpanDuration.toDouble()
+            tagIssue(issue)
+            spanIssues.add(
+                SpanIssueReport(
+                    spanDifference,
+                    SpanReport(ogSpanId, ogUrl, ogMethod, ogSpan.caller.service, ogSpan.callee.service, ogSpanDuration),
+                    SpanReport(
+                        newSpanId,
+                        newUrl,
+                        newMethod,
+                        newSpan.caller.service,
+                        newSpan.callee.service,
+                        newSpanDuration
+                    ),
+                    issue.tag,
+                    issue.message
+                )
+            )
+            log.info("Issue with ${issue.spanPair.first.caller.service} and ${issue.spanPair.first.callee.service} ")
         }
+        return TraceIssueReport(
+            operation,
+            path,
+            method,
+            requestId,
+            index,
+            traceDifference,
+            TraceReport(ogId, ogVersion, ogDuration),
+            TraceReport(newId, newVersion, newDuration),
+            spanIssues
+        )
+    }
+
+    private fun tagIssue(issue: Issue) {
+        val flags = issue.flags
+        var message = ""
+        if (flags[IssueFlag.EXEC_TIME.flagName]!!) {
+            val difference = issue.spanPair.second.span.duration / issue.spanPair.first.span.duration
+            message += "- Performance drop noticed in execution time:\n" +
+                    "    first version: ${issue.spanPair.first.span.duration}, second version: ${issue.spanPair.second.span.duration}, difference: $difference.\n"
+        }
+
+        if (flags[IssueFlag.CALL_ERROR.flagName]!!) {
+            message += "- New error detected in call: ${issue.spanPair.second.span.httpStatusCode}\n"
+        }
+
+        if (flags[IssueFlag.CALL_MISMATCH.flagName]!!) {
+            issue.tag = "call"
+            message +=
+                "- The call differs in caller, callee or the method: \n " +
+                        "    Original call: Caller - ${issue.spanPair.first.caller.service}" +
+                        ", Callee - ${issue.spanPair.first.callee.service}, method: ${issue.spanPair.first.span.httpMethod}, call: ${issue.spanPair.first.span.httpUrl}\n" +
+                        "    New call: Caller - ${issue.spanPair.second.caller.service}, Callee - ${issue.spanPair.second.callee.service}, method: ${issue.spanPair.second.span.httpMethod}, call: ${issue.spanPair.second.span.httpUrl}"
+
+        }
+
+        if (flags[IssueFlag.CHILD_MISMATCH.flagName]!!) {
+            if (issue.tag == "") issue.tag = "call"
+            message += "- The number child calls of the first version are different from the second version.\n First version child calls:\n"
+            for (child in issue.spanPair.first.children) {
+                message += "    From ${child.caller.service} to ${child.callee.service}, url ${child.span.httpUrl}, method ${child.span.httpMethod}\n"
+            }
+            message += "  Second version child calls: \n"
+            for (child in issue.spanPair.second.children) {
+                message += "    From ${child.caller.service} to ${child.callee.service}, url ${child.span.httpUrl}, method ${child.span.httpMethod}\n"
+            }
+        }
+        issue.message = message
     }
 
     fun clearIssues() {
