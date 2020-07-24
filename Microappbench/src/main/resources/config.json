@@ -28,12 +28,12 @@
     "step": "1s"
   },
   "analyzer": {
-    "execTimeThreshold": 0.1,
-    "cpuUsageThreshold": 0.3,
-    "memoryUsageThreshold": 0.3,
-    "receivedBytesThreshold": 0.2,
-    "sentBytesThreshold": 0.2,
-    "httpRequestSizeThreshold": 0.3,
-    "httpResponseSizeThreshold": 0.3
+    "execTimeThreshold": 0.2,
+    "cpuUsageThreshold": 0.6,
+    "memoryUsageThreshold": 0.6,
+    "receivedBytesThreshold": 0.6,
+    "sentBytesThreshold": 0.6,
+    "httpRequestSizeThreshold": 0.6,
+    "httpResponseSizeThreshold": 0.6
   }
 }

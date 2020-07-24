@@ -9,12 +9,14 @@ import analyzer.models.report.SpanReport
 import analyzer.models.report.TraceIssueReport
 import analyzer.models.report.TraceReport
 import api.models.MetricType
+import ch.qos.logback.core.joran.util.beans.BeanDescriptionFactory
 import com.google.gson.JsonElement
 import database.DatabaseOperator
 import database.models.PatternAggObject
 import database.models.SpanObject
 import database.models.TraceMatchObject
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 
 class AnalyzerCore(
     private val firstVersion: String,
@@ -100,17 +102,15 @@ class AnalyzerCore(
         return SpanNode(span, edges)
     }
 
-    private fun readSpanTree(edge: SpanNode) {
-        log.info("I am ${edge.span.spanId} son of ${edge.span.parentId} I do ${edge.span.httpUrl} method ${edge.span.httpMethod}")
-        for (child in edge.children) {
-            readSpanTree(child)
-        }
+    private fun organizeSpans(spanPair: Pair<SpanNode, SpanNode>) {
+
     }
 
     fun compareSpans(spanPair: Pair<SpanNode, SpanNode>) {
         val ogSpan = spanPair.first
         val newSpan = spanPair.second
         val issue = Issue(spanPair)
+
         //TODO compare urls?
         if (ogSpan.callee.service == newSpan.callee.service && ogSpan.caller.service == newSpan.caller.service && ogSpan.span.httpMethod == newSpan.span.httpMethod) {
             issue.flags[IssueFlag.CALL_MISMATCH.flagName] = false
@@ -121,15 +121,15 @@ class AnalyzerCore(
             }
             //check span exec time difference
             issue.flags[IssueFlag.EXEC_TIME.flagName] =
-                (1 * thresholdExecTime.asDouble) * ogSpan.span.duration < newSpan.span.duration
+                (1 + thresholdExecTime.asDouble) * ogSpan.span.duration < newSpan.span.duration
 
             //check span request size difference
             issue.flags[IssueFlag.REQ_SIZE.flagName] =
-                (1 * httpRequestSizeThreshold.asDouble) * ogSpan.span.requestSize < newSpan.span.requestSize
+                (1 + httpRequestSizeThreshold.asDouble) * ogSpan.span.requestSize < newSpan.span.requestSize
 
             //check span response size difference
             issue.flags[IssueFlag.RES_SIZE.flagName] =
-                (1 * httpResponseSizeThreshold.asDouble) * ogSpan.span.responseSize < newSpan.span.responseSize
+                (1 + httpResponseSizeThreshold.asDouble) * ogSpan.span.responseSize < newSpan.span.responseSize
 
             //check if http status code is different and its not success
             issue.flags[IssueFlag.CALL_ERROR.flagName] =
@@ -144,7 +144,17 @@ class AnalyzerCore(
             issue.flags[IssueFlag.CHILD_MISMATCH.flagName] = ogSpan.children.size != newSpan.children.size
 
             for (ogChild in ogSpan.children) {
-                val find = newSpan.children.stream().filter { it.span.index == ogChild.span.index }.findAny()
+                val find = newSpan.children.stream()
+                    .filter {
+                        it.caller.service == ogChild.caller.service
+                                && it.callee.service == ogChild.callee.service
+                                && it.span.httpMethod == ogChild.span.httpMethod
+                                && it.span.httpUrl.substringAfter("http://") == ogChild.span.httpUrl.substringAfter("http://")
+                                && it.span.httpUrl.substringAfter("http://").substringAfter("/")
+                            .substringBefore("/") == ogChild.span.httpUrl.substringAfter("http://").substringAfter("/")
+                            .substringBefore("/")
+                    }
+                    .findAny()
                 if (find.isPresent) {
                     compareSpans(Pair(ogChild, find.get()))
                 } else {
@@ -153,7 +163,9 @@ class AnalyzerCore(
                 }
             }
 
-            if (issue.flags.isNotEmpty()) issues.add(issue)
+            if (!issue.flags.all { !it.value } && spanPair.second.caller.service != "istio-ingressgateway") issues.add(
+                issue
+            )
 
         } else {
             for (flag in IssueFlag.values()) {
@@ -173,23 +185,34 @@ class AnalyzerCore(
         val flag = when (type) {
             MetricType.CPU -> IssueFlag.CPU
             MetricType.MEMORY -> IssueFlag.MEMORY
-            MetricType.SENT_BYTES -> IssueFlag.SENT_BYTES
-            MetricType.RECEIVED_BYTES -> IssueFlag.RECEIVED_BYTES
+            //MetricType.SENT_BYTES -> IssueFlag.SENT_BYTES
+            //MetricType.RECEIVED_BYTES -> IssueFlag.RECEIVED_BYTES
         }
         val threshold = when (type) {
             MetricType.CPU -> cpuUsageThreshold
             MetricType.MEMORY -> memoryUsageThreshold
-            MetricType.SENT_BYTES -> sentBytesThreshold
-            MetricType.RECEIVED_BYTES -> receivedBytesThreshold
+            //MetricType.SENT_BYTES -> sentBytesThreshold
+            //MetricType.RECEIVED_BYTES -> receivedBytesThreshold
         }
         if (ogValue == null || newValue == null) {
             log.error("Error querying metric ${type.typeName}")
         } else {
-            if ((1.toBigDecimal() + threshold.asBigDecimal) * ogValue < newValue) {
-                issue.flags[flag.flagName] = true
-                newNode.flags.add(flag.flagName)
-            } else if (!issue.flags.containsKey(flag.flagName)) {
-                issue.flags[flag.flagName] = false
+            // CPU threshold is directly compared with config value
+            if (type == MetricType.CPU) {
+                if (threshold.asBigDecimal < newValue) {
+                    issue.flags[flag.flagName] = true
+                    newNode.flags.add(flag.flagName)
+                } else if (!issue.flags.containsKey(flag.flagName)) {
+                    issue.flags[flag.flagName] = false
+                }
+            } else {
+                //Any other metric is compared by calculating the limit
+                if ((1.toBigDecimal() + threshold.asBigDecimal) * ogValue < newValue) {
+                    issue.flags[flag.flagName] = true
+                    newNode.flags.add(flag.flagName)
+                } else if (!issue.flags.containsKey(flag.flagName)) {
+                    issue.flags[flag.flagName] = false
+                }
             }
         }
     }
@@ -209,7 +232,8 @@ class AnalyzerCore(
         val index = ogTrace.index
         val ogDuration = ogTrace.duration
         val newDuration = newTrace.duration
-        val traceDifference = newDuration.toDouble() / ogDuration.toDouble()
+        val traceLimit = (1 + thresholdExecTime.asDouble) * ogDuration
+        val traceDifference = (1 - (newDuration.toDouble() / ogDuration.toDouble())) * 100
         val spanIssues = ArrayList<SpanIssueReport>()
         for (issue in issues) {
             val ogSpan = issue.spanPair.first
@@ -222,10 +246,12 @@ class AnalyzerCore(
             val newMethod = newSpan.span.httpMethod
             val ogSpanDuration = ogSpan.span.duration
             val newSpanDuration = newSpan.span.duration
-            val spanDifference = newSpanDuration.toDouble() / ogSpanDuration.toDouble()
-            tagIssue(issue)
+            val spanLimit = (1 + thresholdExecTime.asDouble) * ogSpanDuration
+            val spanDifference = (1 - (newSpanDuration.toDouble() / ogSpanDuration.toDouble())) * 100
+            val flagList = tagIssue(issue)
             spanIssues.add(
                 SpanIssueReport(
+                    spanLimit,
                     spanDifference,
                     SpanReport(ogSpanId, ogUrl, ogMethod, ogSpan.caller.service, ogSpan.callee.service, ogSpanDuration),
                     SpanReport(
@@ -237,6 +263,7 @@ class AnalyzerCore(
                         newSpanDuration
                     ),
                     issue.tag,
+                    flagList,
                     issue.message
                 )
             )
@@ -248,6 +275,7 @@ class AnalyzerCore(
             method,
             requestId,
             index,
+            traceLimit,
             traceDifference,
             TraceReport(ogId, ogVersion, ogDuration),
             TraceReport(newId, newVersion, newDuration),
@@ -255,41 +283,137 @@ class AnalyzerCore(
         )
     }
 
-    private fun tagIssue(issue: Issue) {
+    private fun tagIssue(issue: Issue): ArrayList<String> {
         val flags = issue.flags
-        var message = ""
+        var callerIssues = 0
+        var calleeIssues = 0
+        val flagList = ArrayList<String>()
         if (flags[IssueFlag.EXEC_TIME.flagName]!!) {
-            val difference = issue.spanPair.second.span.duration / issue.spanPair.first.span.duration
-            message += "- Performance drop noticed in execution time:\n" +
-                    "    first version: ${issue.spanPair.first.span.duration}, second version: ${issue.spanPair.second.span.duration}, difference: $difference.\n"
+            val limit = (1 + thresholdExecTime.asDouble) * issue.spanPair.first.span.duration
+            issue.message.add(
+                "- Performance drop noticed in execution time:" +
+                        "    first version: ${issue.spanPair.first.span.duration}, second version: ${issue.spanPair.second.span.duration}, limit: $limit. "
+            )
+            flagList.add(IssueFlag.EXEC_TIME.flagName)
         }
 
         if (flags[IssueFlag.CALL_ERROR.flagName]!!) {
-            message += "- New error detected in call: ${issue.spanPair.second.span.httpStatusCode}\n"
+            issue.message.add("- New error detected in call: ${issue.spanPair.second.span.httpStatusCode} ")
+            flagList.add(IssueFlag.CALL_ERROR.flagName)
+        }
+
+        for (type in MetricType.values()) {
+            val flag = when (type) {
+                MetricType.CPU -> IssueFlag.CPU.flagName
+                MetricType.MEMORY -> IssueFlag.MEMORY.flagName
+                //MetricType.SENT_BYTES -> IssueFlag.SENT_BYTES.flagName
+                //MetricType.RECEIVED_BYTES -> IssueFlag.RECEIVED_BYTES.flagName
+            }
+
+            val threshold = when (type) {
+                MetricType.CPU -> cpuUsageThreshold
+                MetricType.MEMORY -> memoryUsageThreshold
+                //MetricType.SENT_BYTES -> sentBytesThreshold
+                //MetricType.RECEIVED_BYTES -> receivedBytesThreshold
+            }
+
+            if (flags[flag]!!) {
+                if (issue.spanPair.second.caller.flags.contains(flag)) {
+                    callerIssues += 1
+                    val ogUsage = issue.spanPair.first.caller.getMetricAvgByType(flag)
+                    val newUsage = issue.spanPair.second.caller.getMetricAvgByType(flag)
+                    val limit = if (flag == IssueFlag.CPU.flagName) {
+                        threshold.asBigDecimal
+                    } else {
+                        calculateValueDiff(ogUsage, threshold)
+                    }
+                    issue.message.add(
+                        "- Caller ${issue.spanPair.second.caller.service} $flag is over limit established: $limit " +
+                                "    Original average: $ogUsage " +
+                                "    New average $newUsage"
+                    )
+                }
+
+                if (issue.spanPair.second.callee.flags.contains(flag)) {
+                    calleeIssues += 1
+                    val ogUsage = issue.spanPair.first.callee.getMetricAvgByType(flag)
+                    val newUsage = issue.spanPair.second.callee.getMetricAvgByType(flag)
+                    val limit = if (flag == IssueFlag.CPU.flagName) {
+                        threshold.asBigDecimal
+                    } else {
+                        calculateValueDiff(ogUsage, threshold)
+                    }
+                    issue.message.add(
+                        "- Callee ${issue.spanPair.second.callee.service} $flag is over limit established: $limit " +
+                                "    Original average: $ogUsage " +
+                                "    New average $newUsage"
+                    )
+                }
+                flagList.add(flag)
+            }
+        }
+
+        if (flags[IssueFlag.REQ_SIZE.flagName]!!) {
+            callerIssues += 1
+            val ogSize = issue.spanPair.first.span.requestSize
+            val newSize = issue.spanPair.second.span.requestSize
+            val limit = (1 + httpRequestSizeThreshold.asDouble) * ogSize
+            issue.message.add(
+                "- Request size is over threshold established: $limit " +
+                        "    Original size: $ogSize " +
+                        "    New size $newSize"
+            )
+            flagList.add(IssueFlag.REQ_SIZE.flagName)
+        }
+
+        if (flags[IssueFlag.RES_SIZE.flagName]!!) {
+            calleeIssues += 1
+            val ogSize = issue.spanPair.first.span.responseSize
+            val newSize = issue.spanPair.second.span.responseSize
+            val limit = (1 + httpResponseSizeThreshold.asDouble) * ogSize
+            issue.message.add(
+                "- Response size is over threshold established: $limit " +
+                        "    Original size: $ogSize " +
+                        "    New size $newSize"
+            )
+            flagList.add(IssueFlag.RES_SIZE.flagName)
+
         }
 
         if (flags[IssueFlag.CALL_MISMATCH.flagName]!!) {
             issue.tag = "call"
-            message +=
-                "- The call differs in caller, callee or the method: \n " +
+            issue.message.add(
+                "- The call differs in caller, callee or the method: " +
                         "    Original call: Caller - ${issue.spanPair.first.caller.service}" +
-                        ", Callee - ${issue.spanPair.first.callee.service}, method: ${issue.spanPair.first.span.httpMethod}, call: ${issue.spanPair.first.span.httpUrl}\n" +
+                        ", Callee - ${issue.spanPair.first.callee.service}, method: ${issue.spanPair.first.span.httpMethod}, call: ${issue.spanPair.first.span.httpUrl} " +
                         "    New call: Caller - ${issue.spanPair.second.caller.service}, Callee - ${issue.spanPair.second.callee.service}, method: ${issue.spanPair.second.span.httpMethod}, call: ${issue.spanPair.second.span.httpUrl}"
+            )
+            flagList.add(IssueFlag.CALL_MISMATCH.flagName)
+        }
 
+        if (callerIssues > calleeIssues) {
+            issue.tag = "parent"
+        } else if (callerIssues < calleeIssues) {
+            issue.tag = "child"
+        } else {
+            issue.tag = "call"
         }
 
         if (flags[IssueFlag.CHILD_MISMATCH.flagName]!!) {
+            var childMessage = ""
             if (issue.tag == "") issue.tag = "call"
-            message += "- The number child calls of the first version are different from the second version.\n First version child calls:\n"
+            childMessage += "- The number child calls of the first version are different from the second version. First version child calls:"
             for (child in issue.spanPair.first.children) {
-                message += "    From ${child.caller.service} to ${child.callee.service}, url ${child.span.httpUrl}, method ${child.span.httpMethod}\n"
+                childMessage += "    From ${child.caller.service} to ${child.callee.service}, url ${child.span.httpUrl}, method ${child.span.httpMethod}"
             }
-            message += "  Second version child calls: \n"
+            childMessage += "  Second version child calls: "
             for (child in issue.spanPair.second.children) {
-                message += "    From ${child.caller.service} to ${child.callee.service}, url ${child.span.httpUrl}, method ${child.span.httpMethod}\n"
+                childMessage += "    From ${child.caller.service} to ${child.callee.service}, url ${child.span.httpUrl}, method ${child.span.httpMethod}"
             }
+            issue.message.add(childMessage)
+            flagList.add(IssueFlag.CHILD_MISMATCH.flagName)
         }
-        issue.message = message
+        return flagList
     }
 
     fun clearIssues() {
@@ -298,6 +422,15 @@ class AnalyzerCore(
 
     fun getIssues(): ArrayList<Issue> {
         return issues
+    }
+
+    private fun calculateValueDiff(ogValue: BigDecimal?, threshold: JsonElement): BigDecimal {
+        return try {
+            (1.toBigDecimal() + threshold.asBigDecimal) * ogValue!!
+        } catch (e: ArithmeticException) {
+            log.error("Arithmetic error when calculating difference")
+            ogValue!!
+        }
     }
 
 }

@@ -6,6 +6,7 @@ data class TraceIssueReport (
     val method: String,
     val requestId: Int,
     val index: Int,
+    val limit: Double,
     val difference: Double,
     val firstVersion: TraceReport,
     val secondVersion: TraceReport,

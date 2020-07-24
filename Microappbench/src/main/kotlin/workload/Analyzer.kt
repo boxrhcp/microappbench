@@ -38,6 +38,9 @@ class Analyzer {
                 log.error("Spans versions could not be retrieved for trace: ${trace.first.id} pattern ${trace.first.requestId} and index ${trace.first.index}")
             }
         }
+
+
+
         return traceReports
     }
 }
