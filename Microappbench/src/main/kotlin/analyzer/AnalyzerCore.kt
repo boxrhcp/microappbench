@@ -4,12 +4,8 @@ import analyzer.models.Issue
 import analyzer.models.IssueFlag
 import analyzer.models.ServiceNode
 import analyzer.models.SpanNode
-import analyzer.models.report.SpanIssueReport
-import analyzer.models.report.SpanReport
-import analyzer.models.report.TraceIssueReport
-import analyzer.models.report.TraceReport
+import analyzer.models.report.*
 import api.models.MetricType
-import ch.qos.logback.core.joran.util.beans.BeanDescriptionFactory
 import com.google.gson.JsonElement
 import database.DatabaseOperator
 import database.models.PatternAggObject
@@ -102,10 +98,6 @@ class AnalyzerCore(
         return SpanNode(span, edges)
     }
 
-    private fun organizeSpans(spanPair: Pair<SpanNode, SpanNode>) {
-
-    }
-
     fun compareSpans(spanPair: Pair<SpanNode, SpanNode>) {
         val ogSpan = spanPair.first
         val newSpan = spanPair.second
@@ -144,21 +136,43 @@ class AnalyzerCore(
             issue.flags[IssueFlag.CHILD_MISMATCH.flagName] = ogSpan.children.size != newSpan.children.size
 
             for (ogChild in ogSpan.children) {
-                val find = newSpan.children.stream()
+                val count = newSpan.children.stream()
                     .filter {
                         it.caller.service == ogChild.caller.service
                                 && it.callee.service == ogChild.callee.service
                                 && it.span.httpMethod == ogChild.span.httpMethod
-                                && it.span.httpUrl.substringAfter("http://") == ogChild.span.httpUrl.substringAfter("http://")
+                                && it.span.httpUrl.substringAfter("http://")
+                            .substringBefore("/") == ogChild.span.httpUrl.substringAfter("http://").substringBefore("/")
                                 && it.span.httpUrl.substringAfter("http://").substringAfter("/")
                             .substringBefore("/") == ogChild.span.httpUrl.substringAfter("http://").substringAfter("/")
                             .substringBefore("/")
-                    }
-                    .findAny()
-                if (find.isPresent) {
+                        //    && it.span.httpUrl.substringAfter("http://").substringAfter("/")
+                        //.substringAfter("/") != ogChild.span.httpUrl.substringAfter("http://").substringAfter("/")
+                        //.substringAfter("/")
+                    }.count()
+                if (count == 1L) {
+                    val find = newSpan.children.stream()
+                        .filter {
+                            it.caller.service == ogChild.caller.service
+                                    && it.callee.service == ogChild.callee.service
+                                    && it.span.httpMethod == ogChild.span.httpMethod
+                                    && it.span.httpUrl.substringAfter("http://")
+                                .substringBefore("/") == ogChild.span.httpUrl.substringAfter("http://")
+                                .substringBefore("/")
+                                    && it.span.httpUrl.substringAfter("http://").substringAfter("/")
+                                .substringBefore("/") == ogChild.span.httpUrl.substringAfter("http://")
+                                .substringAfter("/")
+                                .substringBefore("/")
+                            //    && it.span.httpUrl.substringAfter("http://").substringAfter("/")
+                            //.substringAfter("/") != ogChild.span.httpUrl.substringAfter("http://").substringAfter("/")
+                            //.substringAfter("/")
+                        }.findAny()
                     compareSpans(Pair(ogChild, find.get()))
-                } else {
-                    log.error("Error trying to match ${ogSpan.span.spanId} child with index ${ogChild.span.index} with ${newSpan.span.spanId}")
+                } else if (count < 1L) {
+                    log.error("Error trying to match ${ogSpan.span.spanId} child with index ${ogChild.span.index} with ${newSpan.span.spanId}. There are no matches with new span")
+                    issue.flags[IssueFlag.CHILD_MISMATCH.flagName] = true
+                } else if (count > 1L) {
+                    log.error("Error trying to match ${ogSpan.span.spanId} child with index ${ogChild.span.index} with ${newSpan.span.spanId}. There are several call matches, probably a repeated call")
                     issue.flags[IssueFlag.CHILD_MISMATCH.flagName] = true
                 }
             }
@@ -197,9 +211,9 @@ class AnalyzerCore(
         if (ogValue == null || newValue == null) {
             log.error("Error querying metric ${type.typeName}")
         } else {
-            // CPU threshold is directly compared with config value
+            // Cpu threshold + original cpu usage compared with new usage
             if (type == MetricType.CPU) {
-                if (threshold.asBigDecimal < newValue) {
+                if (ogValue + threshold.asBigDecimal < newValue) {
                     issue.flags[flag.flagName] = true
                     newNode.flags.add(flag.flagName)
                 } else if (!issue.flags.containsKey(flag.flagName)) {
@@ -241,6 +255,57 @@ class AnalyzerCore(
             val ogSpanId = ogSpan.span.spanId
             val newSpanId = newSpan.span.spanId
             val ogUrl = ogSpan.span.httpUrl
+            val ogReqSize = ogSpan.span.requestSize
+            val ogResSize = ogSpan.span.responseSize
+            val newReqSize = newSpan.span.requestSize
+            val newResSize = newSpan.span.responseSize
+            val ogCpuUsageCaller = if (ogSpan.caller.getMetricAvgByType(MetricType.CPU.typeName) != null) {
+                ogSpan.caller.getMetricAvgByType(MetricType.CPU.typeName)!!
+            } else {
+                BigDecimal.ZERO
+            }
+
+            val newCpuUsageCaller = if (newSpan.caller.getMetricAvgByType(MetricType.CPU.typeName) != null) {
+                newSpan.caller.getMetricAvgByType(MetricType.CPU.typeName)!!
+            } else {
+                BigDecimal.ZERO
+            }
+
+            val ogMemUsageCaller = if (ogSpan.caller.getMetricAvgByType(MetricType.MEMORY.typeName) != null) {
+                ogSpan.caller.getMetricAvgByType(MetricType.MEMORY.typeName)!!
+            } else {
+                BigDecimal.ZERO
+            }
+
+            val newMemUsageCaller = if (newSpan.caller.getMetricAvgByType(MetricType.MEMORY.typeName) != null) {
+                newSpan.caller.getMetricAvgByType(MetricType.MEMORY.typeName)!!
+            } else {
+                BigDecimal.ZERO
+            }
+
+            val ogCpuUsageCallee = if (ogSpan.callee.getMetricAvgByType(MetricType.CPU.typeName) != null) {
+                ogSpan.callee.getMetricAvgByType(MetricType.CPU.typeName)!!
+            } else {
+                BigDecimal.ZERO
+            }
+
+            val newCpuUsageCallee = if (newSpan.callee.getMetricAvgByType(MetricType.CPU.typeName) != null) {
+                newSpan.callee.getMetricAvgByType(MetricType.CPU.typeName)!!
+            } else {
+                BigDecimal.ZERO
+            }
+
+            val ogMemUsageCallee = if (ogSpan.callee.getMetricAvgByType(MetricType.MEMORY.typeName) != null) {
+                ogSpan.callee.getMetricAvgByType(MetricType.MEMORY.typeName)!!
+            } else {
+                BigDecimal.ZERO
+            }
+
+            val newMemUsageCallee = if (newSpan.callee.getMetricAvgByType(MetricType.MEMORY.typeName) != null) {
+                newSpan.callee.getMetricAvgByType(MetricType.MEMORY.typeName)!!
+            } else {
+                BigDecimal.ZERO
+            }
             val newUrl = newSpan.span.httpUrl
             val ogMethod = ogSpan.span.httpMethod
             val newMethod = newSpan.span.httpMethod
@@ -253,13 +318,40 @@ class AnalyzerCore(
                 SpanIssueReport(
                     spanLimit,
                     spanDifference,
-                    SpanReport(ogSpanId, ogUrl, ogMethod, ogSpan.caller.service, ogSpan.callee.service, ogSpanDuration),
+                    SpanReport(
+                        ogSpanId,
+                        ogUrl,
+                        ogMethod,
+                        ogReqSize,
+                        ogResSize,
+                        ServiceReport(
+                            ogSpan.caller.service,
+                            ogCpuUsageCaller,
+                            ogMemUsageCaller
+                        ),
+                        ServiceReport(
+                            ogSpan.callee.service,
+                            ogCpuUsageCallee,
+                            ogMemUsageCallee
+                        ),
+                        ogSpanDuration
+                    ),
                     SpanReport(
                         newSpanId,
                         newUrl,
                         newMethod,
-                        newSpan.caller.service,
-                        newSpan.callee.service,
+                        newReqSize,
+                        newResSize,
+                        ServiceReport(
+                            newSpan.caller.service,
+                            newCpuUsageCaller,
+                            newMemUsageCaller
+                        ),
+                        ServiceReport(
+                            newSpan.callee.service,
+                            newCpuUsageCallee,
+                            newMemUsageCallee
+                        ),
                         newSpanDuration
                     ),
                     issue.tag,
@@ -298,7 +390,16 @@ class AnalyzerCore(
         }
 
         if (flags[IssueFlag.CALL_ERROR.flagName]!!) {
-            issue.message.add("- New error detected in call: ${issue.spanPair.second.span.httpStatusCode} ")
+            val statusPattern = issue.spanPair.second.span.httpStatusCode / 100
+            //if error 4xx client bad requests types
+            if (statusPattern == 4) {
+                issue.tag = "parent"
+            }
+            // if error 5xx server error types
+            if (statusPattern == 5) {
+                issue.tag = "child"
+            }
+            issue.message.add("- New error detected in call: ${issue.spanPair.second.span.httpStatusCode}")
             flagList.add(IssueFlag.CALL_ERROR.flagName)
         }
 
@@ -323,7 +424,7 @@ class AnalyzerCore(
                     val ogUsage = issue.spanPair.first.caller.getMetricAvgByType(flag)
                     val newUsage = issue.spanPair.second.caller.getMetricAvgByType(flag)
                     val limit = if (flag == IssueFlag.CPU.flagName) {
-                        threshold.asBigDecimal
+                        ogUsage!!.plus(threshold.asBigDecimal)
                     } else {
                         calculateValueDiff(ogUsage, threshold)
                     }
@@ -339,7 +440,7 @@ class AnalyzerCore(
                     val ogUsage = issue.spanPair.first.callee.getMetricAvgByType(flag)
                     val newUsage = issue.spanPair.second.callee.getMetricAvgByType(flag)
                     val limit = if (flag == IssueFlag.CPU.flagName) {
-                        threshold.asBigDecimal
+                        ogUsage!!.plus(threshold.asBigDecimal)
                     } else {
                         calculateValueDiff(ogUsage, threshold)
                     }
@@ -354,6 +455,7 @@ class AnalyzerCore(
         }
 
         if (flags[IssueFlag.REQ_SIZE.flagName]!!) {
+            if (flags[IssueFlag.CALL_ERROR.flagName]!!) issue.tag = "parent"
             callerIssues += 1
             val ogSize = issue.spanPair.first.span.requestSize
             val newSize = issue.spanPair.second.span.requestSize
@@ -390,23 +492,29 @@ class AnalyzerCore(
             )
             flagList.add(IssueFlag.CALL_MISMATCH.flagName)
         }
-
-        if (callerIssues > calleeIssues) {
-            issue.tag = "parent"
-        } else if (callerIssues < calleeIssues) {
-            issue.tag = "child"
-        } else {
-            issue.tag = "call"
+        if (issue.tag == "") {
+            if (callerIssues > calleeIssues) {
+                issue.tag = "parent"
+            } else if (callerIssues < calleeIssues) {
+                issue.tag = "child"
+            } else {
+                issue.tag = "call"
+            }
         }
 
         if (flags[IssueFlag.CHILD_MISMATCH.flagName]!!) {
             var childMessage = ""
-            if (issue.tag == "") issue.tag = "call"
-            childMessage += "- The number child calls of the first version are different from the second version. First version child calls:"
+            //if there is a performance drop in current span while having a child mismatch it means that the performance drop is provoked by these extra calls
+            if (flags[IssueFlag.EXEC_TIME.flagName]!! || flags[IssueFlag.CPU.flagName]!!) {
+                if (issue.tag == "") issue.tag = "child"
+                childMessage = "- Anomalous calls called by ${issue.spanPair.second.callee.service}"
+            }
+
+            childMessage += "   The number child calls of the first version are different from the second version. First version child calls:"
             for (child in issue.spanPair.first.children) {
                 childMessage += "    From ${child.caller.service} to ${child.callee.service}, url ${child.span.httpUrl}, method ${child.span.httpMethod}"
             }
-            childMessage += "  Second version child calls: "
+            childMessage += "   Second version child calls: "
             for (child in issue.spanPair.second.children) {
                 childMessage += "    From ${child.caller.service} to ${child.callee.service}, url ${child.span.httpUrl}, method ${child.span.httpMethod}"
             }
@@ -418,10 +526,6 @@ class AnalyzerCore(
 
     fun clearIssues() {
         issues.clear()
-    }
-
-    fun getIssues(): ArrayList<Issue> {
-        return issues
     }
 
     private fun calculateValueDiff(ogValue: BigDecimal?, threshold: JsonElement): BigDecimal {
