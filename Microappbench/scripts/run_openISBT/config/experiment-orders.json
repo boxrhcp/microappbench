@@ -1,5 +1,5 @@
 {
-  "totalPatternRequests": 100,
+  "totalPatternRequests": 1000,
   "patterns": [
     {
       "name": "CRE",
@@ -16,7 +16,7 @@
           "wait": 5
         }
       ],
-      "weight": 20
+      "weight": 30
     },
     {
       "name": "LST",

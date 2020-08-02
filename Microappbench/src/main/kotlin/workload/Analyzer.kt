@@ -24,14 +24,12 @@ class Analyzer {
         log.info("Starting analysis")
         val drops = core.findPerformanceDrop()
         val traces = core.matchPatternAndTraces(drops)
-        //val spanTrees = ArrayList<Pair<SpanNode, SpanNode>>()
         val traceReports = ArrayList<TraceIssueReport>()
         for (trace in traces) {
             core.clearIssues()
             val firstRoot = core.getSpansTree(trace.first)
             val secondRoot = core.getSpansTree(trace.second)
             if (firstRoot != null && secondRoot != null) {
-                //spanTrees.add()
                 core.compareSpans(Pair(firstRoot, secondRoot))
                 traceReports.add(core.generateReport(trace))
             } else {

@@ -69,3 +69,5 @@ java -jar jars/matchingTool-1.0-SNAPSHOT-all.jar -o -s config/sockshop-$service-
 java -jar jars/wlgenerator-1.0-SNAPSHOT-all.jar -o -m config/mapping-$service-$version.json -w config/workload-$service-$version.json
 
 kill -KILL $fakeServer_pid
+
+exit 0

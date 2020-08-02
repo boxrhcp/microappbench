@@ -39,3 +39,5 @@ mkdir results
 java -jar jars/runner-1.0-SNAPSHOT-all.jar -o -r results/results-$service-$version.json -w config/workload-$service-$version.json -e http://$address -t 5 -u localhost:$worker_port
 
 kill -KILL $worker_pid
+
+exit 0

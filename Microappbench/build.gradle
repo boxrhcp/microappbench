@@ -92,3 +92,7 @@ task buildMonitorRetrieverTool(type: Jar) {
 task buildAnalyzerTool(type: Jar) {
     jarFactory(it, 'analyzerTool', 'tools.analyzer.AnalyzerToolKt')
 }
+
+task buildControllerTool(type: Jar) {
+    jarFactory(it, 'controllerTool', 'tools.controller.ControllerToolKt')
+}

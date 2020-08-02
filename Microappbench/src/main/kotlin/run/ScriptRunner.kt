@@ -4,7 +4,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
-class ScriptRunner {
+class ScriptRunner(private val verbose: Boolean) {
 
     fun executeOpenISBT(address: String, service: String, version: String, workerPort: String) {
         thread(start = true, name = version) {
@@ -19,22 +19,43 @@ class ScriptRunner {
 
     }
 
-    fun bootSUT() {
-        ("sh boot-sockshop.sh").runCommand(File("scripts"))
+    fun bootSUT(): String {
+        val result = ("sh boot-sockshop.sh").runCommand(File("scripts"))
+        return result.split("\n").last()
+        //return ("sh boot-sockshop.sh").runCommand(File("scripts"))
+    }
+
+    fun executeBenchmarkRunner(ip: String, verbose: Boolean) {
+        var vArg = ""
+        if (verbose) vArg = "-v "
+        ("java -jar build/libs/benchmarkTool-1.0-SNAPSHOT-all.jar $vArg-i $ip").runCommand(File("."))
+    }
+
+    fun executeMonitorRetriever(clean: Boolean) {
+        var cleanComm = ""
+        if (clean) cleanComm = "-c"
+        ("java -jar build/libs/monitorRetrieverTool-1.0-SNAPSHOT-all.jar $cleanComm").runCommand(File("."))
+    }
+
+    fun executeAnalyzer() {
+        ("java -jar build/libs/analyzerTool-1.0-SNAPSHOT-all.jar").runCommand(File("."))
     }
 
 
-    fun bootSockshop() {
-
-    }
-
-    private fun String.runCommand(workingDir: File) {
-        ProcessBuilder(*split(" ").toTypedArray())
+    private fun String.runCommand(workingDir: File): String {
+        var redirect = ProcessBuilder.Redirect.PIPE
+        if (verbose) {
+            redirect = ProcessBuilder.Redirect.INHERIT
+        }
+        val proc = ProcessBuilder(*split(" ").toTypedArray())
             .directory(workingDir)
-            .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-            .redirectError(ProcessBuilder.Redirect.INHERIT)
+            .redirectOutput(redirect)
+            .redirectError(redirect)
             .start()
-            .waitFor(60, TimeUnit.MINUTES)
+
+        proc.waitFor(60, TimeUnit.MINUTES)
+
+        return proc.inputStream.bufferedReader().readText()
     }
 
 }

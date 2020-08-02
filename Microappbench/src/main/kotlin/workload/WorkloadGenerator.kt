@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory
 import run.ScriptRunner
 import utils.ResourceManager
 
-class WorkloadGenerator() {
+class WorkloadGenerator(private val verbose: Boolean) {
     private val log = LoggerFactory.getLogger("WorkloadGenerator")!!
     private val config = ResourceManager.getConfigFile()
 
@@ -13,7 +13,7 @@ class WorkloadGenerator() {
         val firstVersion = config.get("firstVersion").asString
         val secondVersion = config.get("secondVersion").asString
         val service = config.getAsJsonObject("sut").get("serviceToBenchmark").asString
-        val runner = ScriptRunner()
+        val runner = ScriptRunner(verbose)
         runner.prepareOpenISBT(build, ipToBenchmark, service, firstVersion)
         runner.prepareOpenISBT(false, ipToBenchmark, service, secondVersion)
         val start = DateTime.now().millis
