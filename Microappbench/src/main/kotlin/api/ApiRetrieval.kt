@@ -156,8 +156,8 @@ class ApiRetrieval(
         val measurements = ArrayList<Pair<String, String>>()
         measurements.add(Pair(MetricType.CPU.typeName, prometheusQueries.get("cpuQuery").asString))
         measurements.add(Pair(MetricType.MEMORY.typeName, prometheusQueries.get("memoryQuery").asString))
-        //measurements.add(Pair(MetricType.SENT_BYTES.typeName, prometheusQueries.get("sentBytesQuery").asString))
-        //measurements.add(Pair(MetricType.RECEIVED_BYTES.typeName, prometheusQueries.get("receivedBytesQuery").asString))
+        measurements.add(Pair(MetricType.SENT_BYTES.typeName, prometheusQueries.get("sentBytesQuery").asString))
+        measurements.add(Pair(MetricType.RECEIVED_BYTES.typeName, prometheusQueries.get("receivedBytesQuery").asString))
         val prometheusData = ArrayList<PrometheusApiObject>()
         for (measurement in measurements) {
             log.debug("Retrieving prometheus ${measurement.first} information")
