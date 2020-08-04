@@ -23,6 +23,7 @@
         <appender-ref ref="FILE"/>
     </root>
 
+    <logger name="MonitoringRetriever" level="INFO"/>
     <logger name="ApiRetrieval" level="INFO"/>
     <logger name="JsonFileHandler" level="INFO"/>
     <logger name="DatabaseOperator" level="INFO"/>

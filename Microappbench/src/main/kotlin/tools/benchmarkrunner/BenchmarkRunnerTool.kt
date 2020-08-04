@@ -10,7 +10,12 @@ val log = LoggerFactory.getLogger("BenchmarkTool")!!
 
 fun main(args: Array<String>) = mainBody {
     ArgParser(args).parseInto(::BenchmarkRunnerArguments).run {
+        println("Starting benchmark module...")
+        val startTime = System.currentTimeMillis()
         val generator = WorkloadGenerator(verbose)
         generator.executeBenchmark(ipToBenchmark, build)
+        val duration = System.currentTimeMillis() - startTime
+        log.info("Execution time: $duration" )
+        println("Benchmark done.")
     }
 }

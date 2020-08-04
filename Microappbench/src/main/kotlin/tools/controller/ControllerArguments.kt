@@ -3,7 +3,7 @@ package tools.controller
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 
-class ExperimentControllerArguments(parser: ArgParser) {
+class ControllerArguments(parser: ArgParser) {
     val clean by parser.flagging(
         "-c", "--clean",
         help = "clean existing db"

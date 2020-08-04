@@ -69,8 +69,8 @@ void jarFactory(Jar jarTask, jarName, mainClass) {
         )
     }
     jarTask.zip64 = true
-    jarTask.classifier = 'all'
-    jarTask.baseName = jarName
+    jarTask.archiveBaseName = jarName
+    jarTask.archiveClassifier.set('all')
     jarTask.from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }

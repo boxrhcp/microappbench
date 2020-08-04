@@ -31,8 +31,8 @@
     "execTimeThreshold": 0.1,
     "cpuUsageThreshold": 0.1,
     "memoryUsageThreshold": 1,
-    "receivedBytesThreshold": 0.5,
-    "sentBytesThreshold": 0.5,
+    "receivedBytesThreshold": 0.6,
+    "sentBytesThreshold": 0.6,
     "httpRequestSizeThreshold": 0.6,
     "httpResponseSizeThreshold": 0.6
   }

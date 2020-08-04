@@ -59,7 +59,8 @@ class MonitoringRetriever(val start: Long, val end: Long) {
                 }
             }.awaitAll()
         } catch (e: Exception) {
-            log.error("Error loading kiali API data to db: ${e.localizedMessage}")
+            log.error("Error loading Kiali API data to db.")
+            log.debug("${e.message}")
         }
 
     }
@@ -73,7 +74,8 @@ class MonitoringRetriever(val start: Long, val end: Long) {
                 }
             }
         } catch (e: Exception) {
-            log.error("Error loading prometheus API data to db: ${e.message}")
+            log.error("Error loading prometheus API data to db.")
+            log.debug("${e.message}")
         }
     }
 
@@ -120,7 +122,8 @@ class MonitoringRetriever(val start: Long, val end: Long) {
                 }
             }.awaitAll()
         } catch (e: Exception) {
-            log.error("Error loading openISBT json file data to db: ${e.localizedMessage}")
+            log.error("Error loading openISBT data to db.")
+            log.debug("${e.message}")
         }
     }
 }

@@ -43,7 +43,7 @@ class AnalyzerCore(
                 log.debug("${pattern.version}: ${pattern.durationAvg}")
                 log.debug("${mirror.version}: ${mirror.durationAvg}")
                 if ((1.toBigDecimal() + thresholdExecTime.asBigDecimal) * pattern.durationAvg < mirror.durationAvg) {
-                    log.info("Difference found between versions: ${pattern.resource} with pattern ${pattern.patternName}")
+                    println("Difference found between versions: ${pattern.resource} with pattern ${pattern.patternName}")
                     drops.add(mirror)
                 }
             }
@@ -51,25 +51,23 @@ class AnalyzerCore(
         return drops
     }
 
-    fun matchPatternAndTraces(drops: ArrayList<PatternAggObject>): ArrayList<Pair<TraceMatchObject, TraceMatchObject>> {
+    fun matchPatternAndTraces(drop: PatternAggObject): ArrayList<Pair<TraceMatchObject, TraceMatchObject>> {
         // get all traces or compare already traces and discard the correct ones?
         val results = ArrayList<Pair<TraceMatchObject, TraceMatchObject>>()
-        for (drop in drops) {
-            val firstTraces = db.getTracesMatchedWithPattern(drop, firstVersion)
-            val secondTraces = db.getTracesMatchedWithPattern(drop, secondVersion)
-            for (trace in firstTraces) {
-                //log.debug("Trying to match version traces for ${trace.tracePath} with ${trace.traceMethod} [${trace.requestId}]")
-                //TODO: Watch out, is the match really working?
-                val find = secondTraces.stream()
-                    .filter { it.requestId == trace.requestId && it.index == it.index && it.tracePath == trace.tracePath && it.traceMethod == trace.traceMethod }
-                    .findAny()
-                if (find.isPresent) {
-                    val mirror = find.get()
-                    log.debug("Request match between versions for ${trace.tracePath} with ${trace.traceMethod} [${trace.requestId}]")
-                    if ((1 + thresholdExecTime.asDouble) * trace.duration < mirror.duration) {
-                        log.info("Difference between trace versions for ${trace.tracePath} with ${trace.traceMethod} [${trace.requestId}]")
-                        results.add(Pair(trace, mirror))
-                    }
+        val firstTraces = db.getTracesMatchedWithPattern(drop, firstVersion)
+        val secondTraces = db.getTracesMatchedWithPattern(drop, secondVersion)
+        for (trace in firstTraces) {
+            //log.debug("Trying to match version traces for ${trace.tracePath} with ${trace.traceMethod} [${trace.requestId}]")
+            //TODO: Watch out, is the match really working?
+            val find = secondTraces.stream()
+                .filter { it.requestId == trace.requestId && it.index == it.index && it.tracePath == trace.tracePath && it.traceMethod == trace.traceMethod }
+                .findAny()
+            if (find.isPresent) {
+                val mirror = find.get()
+                log.debug("Request match between versions for ${trace.tracePath} with ${trace.traceMethod} [${trace.requestId}]")
+                if ((1 + thresholdExecTime.asDouble) * trace.duration < mirror.duration) {
+                    log.info("Difference between trace versions for ${trace.tracePath} with ${trace.traceMethod} [${trace.requestId}]")
+                    results.add(Pair(trace, mirror))
                 }
             }
         }
