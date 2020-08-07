@@ -15,12 +15,13 @@ fun main(args: Array<String>) = mainBody {
     ArgParser(args).parseInto(::AnalyzerArguments).run {
         println("Starting analyzer module...")
         val startTime = System.currentTimeMillis()
-        val analyzer = Analyzer()
+        val analyzer = Analyzer(verbose)
         val reports = analyzer.execAnalysis()
         val gson: Gson = GsonBuilder().setPrettyPrinting().create()
         File(resultsFileName).writeText(gson.toJson(reports))
         val duration = System.currentTimeMillis() - startTime
         log.info("Execution time: $duration" )
         println("Analysis done. See results in " + File(resultsFileName).absoluteFile)
+        if(reports.issuePatterns.isNotEmpty() && frontend) analyzer.runFrontEnd()
     }
 }

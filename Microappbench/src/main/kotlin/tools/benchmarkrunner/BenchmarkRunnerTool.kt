@@ -13,7 +13,7 @@ fun main(args: Array<String>) = mainBody {
         println("Starting benchmark module...")
         val startTime = System.currentTimeMillis()
         val generator = WorkloadGenerator(verbose)
-        generator.executeBenchmark(ipToBenchmark, build)
+        generator.executeBenchmark(build)
         val duration = System.currentTimeMillis() - startTime
         log.info("Execution time: $duration" )
         println("Benchmark done.")

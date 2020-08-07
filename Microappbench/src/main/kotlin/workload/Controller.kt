@@ -10,10 +10,9 @@ class Controller(private val clean: Boolean, private val verbose: Boolean) {
         //TODO: fault tolerance
         log.info("Building the SUT")
         val runner = ScriptRunner(verbose)
-        val ip = runner.bootSUT()
-        log.info("The ip is $ip")
+        runner.bootSUT()
         log.info("Running the benchmark")
-        runner.executeBenchmarkRunner(ip, verbose)
+        runner.executeBenchmarkRunner(verbose)
         log.info("Retrieving the benchmark results")
         runner.executeMonitorRetriever(clean)
         log.info("Analyzing data")

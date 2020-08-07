@@ -9,4 +9,13 @@ class AnalyzerArguments(parser: ArgParser) {
         help = "name of the file to store results"
     ).default("results.json")
 
+    val verbose by parser.flagging(
+        "-v", "--verbose",
+        help = "print verbose"
+    ).default(false)
+
+    val frontend by parser.flagging(
+        "-f", "--frontend",
+        help = "run front end"
+    ).default(false)
 }

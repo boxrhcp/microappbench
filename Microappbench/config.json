@@ -4,6 +4,7 @@
   "benchmarkResultsDir": "scripts/run_openISBT/results",
   "baseUrl": "http://localhost",
   "sut": {
+    "address": "34.77.73.60",
     "namespace": "sock-shop",
     "serviceToBenchmark": "orders",
     "serviceFirstVersion": "orders-v1",

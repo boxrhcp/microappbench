@@ -9,9 +9,10 @@ class WorkloadGenerator(private val verbose: Boolean) {
     private val log = LoggerFactory.getLogger("WorkloadGenerator")!!
     private val config = ResourceManager.getConfigFile()
 
-    fun executeBenchmark(ipToBenchmark: String, build: Boolean) {
+    fun executeBenchmark(build: Boolean) {
         val firstVersion = config.get("firstVersion").asString
         val secondVersion = config.get("secondVersion").asString
+        val ipToBenchmark = config.getAsJsonObject("sut").get("address").asString
         val service = config.getAsJsonObject("sut").get("serviceToBenchmark").asString
         val runner = ScriptRunner(verbose)
         runner.prepareOpenISBT(build, ipToBenchmark, service, firstVersion)

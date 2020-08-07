@@ -19,16 +19,14 @@ class ScriptRunner(private val verbose: Boolean) {
 
     }
 
-    fun bootSUT(): String {
-        val result = ("sh boot-sockshop.sh").runCommand(File("scripts"))
-        return result.split("\n").last()
-        //return ("sh boot-sockshop.sh").runCommand(File("scripts"))
+    fun bootSUT() {
+        ("sh boot-sockshop.sh").runCommand(File("scripts"))
     }
 
-    fun executeBenchmarkRunner(ip: String, verbose: Boolean) {
+    fun executeBenchmarkRunner(verbose: Boolean) {
         var vArg = ""
         if (verbose) vArg = "-v "
-        ("java -jar build/libs/benchmarkTool-1.0-SNAPSHOT-all.jar $vArg-i $ip").runCommand(File("."))
+        ("java -jar build/libs/benchmarkTool-1.0-SNAPSHOT-all.jar $vArg").runCommand(File("."))
     }
 
     fun executeMonitorRetriever(clean: Boolean) {
@@ -38,7 +36,13 @@ class ScriptRunner(private val verbose: Boolean) {
     }
 
     fun executeAnalyzer() {
-        ("java -jar build/libs/analyzerTool-1.0-SNAPSHOT-all.jar").runCommand(File("."))
+        var vArg = ""
+        if (verbose) vArg = "-v "
+        ("java -jar build/libs/analyzerTool-1.0-SNAPSHOT-all.jar $vArg-f").runCommand(File("."))
+    }
+
+    fun executeBootFrontend(){
+        ("sh boot-frontend.sh").runCommand(File("FrontendAnalyzer"))
     }
 
 

@@ -90,6 +90,7 @@ class MonitoringRetriever(val start: Long, val end: Long) {
             version,
             config.get("benchmarkResultsDir").asString
         )
+
         try {
             coroutineScope {
                 jsonData.map {

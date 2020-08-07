@@ -8,9 +8,12 @@ import analyzer.models.report.TraceIssueReport
 import database.models.PatternAggObject
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
+import run.ScriptRunner
 import utils.ResourceManager
 
-class Analyzer {
+class Analyzer (
+    private val verbose: Boolean
+){
     private val log = LoggerFactory.getLogger("Analyzer")!!
     private val config = ResourceManager.getConfigFile()
     private val core = AnalyzerCore(
@@ -61,5 +64,10 @@ class Analyzer {
             patternReports.add(PatternReport(drop.patternName, drop.resource, traceReports))
         }
         return FinalReport(patternReports)
+    }
+
+    fun runFrontEnd(){
+        val runner = ScriptRunner(verbose)
+        runner.executeBootFrontend()
     }
 }

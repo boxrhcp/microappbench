@@ -46,5 +46,6 @@ kubectl port-forward -n istio-system $(kubectl get pod -n istio-system -l app=pr
 #print ingress external IP
 kubectl -n istio-system get svc istio-ingressgateway --no-headers -o jsonpath="{.status.loadBalancer.ingress[*].ip}"
 SUT_IP=$(kubectl -n istio-system get svc istio-ingressgateway --no-headers -o jsonpath="{.status.loadBalancer.ingress[*].ip}")
+jq -c ".sut.address = \"${SUT_IP}\"" ../config.json | jq . > ../tmp.$$.json && mv ../tmp.$$.json ../config.json
 
 exit 0

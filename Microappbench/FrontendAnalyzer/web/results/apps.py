@@ -13,7 +13,6 @@ class ResultsConfig(AppConfig):
     def ready(self):
         path = os.path.dirname(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        print(path)
         data = pd.read_json(path + '/results.json')
 
         for pattern in data['issuePatterns']:

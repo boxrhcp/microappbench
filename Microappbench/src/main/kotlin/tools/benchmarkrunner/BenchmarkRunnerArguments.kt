@@ -14,9 +14,4 @@ class BenchmarkRunnerArguments(parser: ArgParser) {
         "-v", "--verbose",
         help = "print verbose"
     ).default(false)
-
-    val ipToBenchmark: String by parser.storing(
-        "-i", "--ip",
-        help = "ip of the artifact to benchmark"
-    )
 }
