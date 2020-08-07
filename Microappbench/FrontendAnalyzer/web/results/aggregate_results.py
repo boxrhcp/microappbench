@@ -70,7 +70,7 @@ def stats(patternValue):
                                      'callError', 'callMismatch', 'childMismatch'))
     for flag in FLAGS:
         grouped = df.groupby(['operation', 'path', 'method', 'caller', 'callee', 'spanMethod'])[
-            flag].sum().reset_index()
+            flag].sum().reset_index().sort_values(flag, ascending=True)
         index = grouped.index.values
         labels = []
         for i in index:
