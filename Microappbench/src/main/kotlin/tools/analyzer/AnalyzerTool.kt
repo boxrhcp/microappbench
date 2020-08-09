@@ -22,6 +22,10 @@ fun main(args: Array<String>) = mainBody {
         val duration = System.currentTimeMillis() - startTime
         log.info("Execution time: $duration" )
         println("Analysis done. See results in " + File(resultsFileName).absoluteFile)
-        if(reports.issuePatterns.isNotEmpty() && frontend) analyzer.runFrontEnd()
+        if(reports.issuePatterns.isNotEmpty() && frontend){
+            println("Booting front end in http://localhost:8000")
+            println("Press Ctrl + C to stop frontend")
+            analyzer.runFrontEnd()
+        }
     }
 }
