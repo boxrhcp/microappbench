@@ -28,7 +28,6 @@ def _get_path(filename):
 def load_args():
     parser = argparse.ArgumentParser(description="This script gets stats")
     parser.add_argument("--verbose", help="The verbose level can be 0, 1 or 2", type=int, default=0)
-    parser.add_argument("--ip", help="ip to benchmark", type=str)
 
     return parser.parse_args()
 
@@ -166,10 +165,10 @@ def get_stats(flag):
 if __name__ == '__main__':
     args = load_args()
 
-    for x in range(10):
+    for x in range(20):
         start = time.time()
         run_file(
-            ['java', '-jar', _get_path(RUN_BENCHMARK), '-i', args.ip])
+            ['java', '-jar', _get_path(RUN_BENCHMARK), '-v'])
         end = time.time()
         query_api(start, end, 'CPU')
         query_api(start, end, 'MEM')
