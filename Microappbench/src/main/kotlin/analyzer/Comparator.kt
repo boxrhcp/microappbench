@@ -48,7 +48,8 @@ class Comparator(
 
             //check if http status code is different and its not success
             issue.flags[IssueFlag.CALL_ERROR.flagName] =
-                (ogSpan.span.httpStatusCode != newSpan.span.httpStatusCode && newSpan.span.httpStatusCode != 200
+                    (ogSpan.span.httpStatusCode != newSpan.span.httpStatusCode && newSpan.span.httpStatusCode != 200
+                //(newSpan.span.httpStatusCode != 200
                         && newSpan.span.httpStatusCode != 201 && newSpan.span.httpStatusCode != 202
                         && newSpan.span.httpStatusCode != 203 && newSpan.span.httpStatusCode != 204
                         && newSpan.span.httpStatusCode != 205 && newSpan.span.httpStatusCode != 206

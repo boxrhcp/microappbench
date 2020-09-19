@@ -257,11 +257,11 @@ class AnalyzerCore(
             val statusPattern = issue.spanPair.second.span.httpStatusCode / 100
             //if error 4xx client bad requests types
             if (statusPattern == 4) {
-                issue.tag = "parent"
+                callerIssues += 1
             }
             // if error 5xx server error types
             if (statusPattern == 5) {
-                issue.tag = "child"
+                calleeIssues += 1
             }
             issue.message.add("- New error detected in call: ${issue.spanPair.second.span.httpStatusCode}")
             flagList.add(IssueFlag.CALL_ERROR.flagName)
@@ -284,7 +284,11 @@ class AnalyzerCore(
 
             if (flags[flag]!!) {
                 if (issue.spanPair.second.caller.flags.contains(flag)) {
-                    callerIssues += 1
+                    if(flag == IssueFlag.RECEIVED_BYTES.flagName){
+                        calleeIssues += 1
+                    }else {
+                        callerIssues += 1
+                    }
                     val ogUsage = issue.spanPair.first.caller.getMetricAvgByType(flag)
                     val newUsage = issue.spanPair.second.caller.getMetricAvgByType(flag)
                     val limit = if (flag == IssueFlag.CPU.flagName) {
@@ -300,7 +304,11 @@ class AnalyzerCore(
                 }
 
                 if (issue.spanPair.second.callee.flags.contains(flag)) {
-                    calleeIssues += 1
+                    if(flag == IssueFlag.RECEIVED_BYTES.flagName){
+                        callerIssues += 1
+                    }else {
+                        calleeIssues += 1
+                    }
                     val ogUsage = issue.spanPair.first.callee.getMetricAvgByType(flag)
                     val newUsage = issue.spanPair.second.callee.getMetricAvgByType(flag)
                     val limit = if (flag == IssueFlag.CPU.flagName) {
@@ -319,7 +327,7 @@ class AnalyzerCore(
         }
 
         if (flags[IssueFlag.REQ_SIZE.flagName]!!) {
-            if (flags[IssueFlag.CALL_ERROR.flagName]!!) issue.tag = "parent"
+            //if (flags[IssueFlag.CALL_ERROR.flagName]!!) issue.tag = "parent"
             callerIssues += 1
             val ogSize = issue.spanPair.first.span.requestSize
             val newSize = issue.spanPair.second.span.requestSize
@@ -370,7 +378,7 @@ class AnalyzerCore(
             var childMessage = ""
             //if there is a performance drop in current span while having a child mismatch it means that the performance drop is provoked by these extra calls
             if (flags[IssueFlag.EXEC_TIME.flagName]!! || flags[IssueFlag.CPU.flagName]!!) {
-                if (issue.tag == "") issue.tag = "child"
+                //if (issue.tag == "") issue.tag = "child"
                 childMessage = "- Anomalous calls called by ${issue.spanPair.second.callee.service}"
             }
 

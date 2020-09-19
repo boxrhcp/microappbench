@@ -294,4 +294,10 @@ class DatabaseOperator {
         }
         return results
     }
+
+    fun commit() {
+        transaction {
+            commit()
+        }
+    }
 }
